@@ -13,20 +13,6 @@ from ...config.loggers import get_and_set_logger
 
 logger = get_and_set_logger(__name__)
 
-def create_block_metadata(
-        points: List[Dict],
-        string_counts: Dict[str, int],
-        preserved_fields: Dict[str, List],
-        block_id: str
-) -> Dict:
-    """Create metadata for a block."""
-    return {
-        "total_points": sum(string_counts.values()),
-        "unique_points": len(points),
-        "available_fields": list(preserved_fields.keys()),
-        "embedded_fields": sorted(preserved_fields.keys())
-    }
-
 def save_visualization(
         data: Dict,
         filename: str
@@ -97,7 +83,6 @@ def compute_dimensionality_reduction(
     # Fit and transform
     return reducer.fit_transform(dist_matrix)
 
-# Modify the existing process_block_tsne function to use the new compute_dimensionality_reduction
 def process_block_dimred(
         strings: List[str],
         distances: np.ndarray,

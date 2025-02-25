@@ -122,30 +122,6 @@ def process_csv_for_distances(
             detail=f"Error processing CSV fields: {str(e)}"
         )
 
-def calculate_summary_statistics(results: List[Dict], fields: List[str]) -> Dict:
-    """Calculate summary statistics including field-specific metrics."""
-    summary = {
-        "num_comparisons": len(results),
-        "field_statistics": {}
-    }
-
-    # Calculate statistics for each field
-    for field in fields:
-        field_values = []
-        for result in results:
-            field_values.extend([
-                result["fields1"][field],
-                result["fields2"][field]
-            ])
-
-        # Calculate basic statistics for the field
-        unique_values = len(set(field_values))
-        summary["field_statistics"][field] = {
-            "unique_values": unique_values,
-            "total_values": len(field_values),
-            "uniqueness_ratio": unique_values / len(field_values) if field_values else 0
-        }
-
 def setup_blocks(df: pl.DataFrame, blocking_keys: Optional[List[str]]) -> List[pl.DataFrame]:
     """Set up data blocks based on blocking keys."""
     if not blocking_keys:
