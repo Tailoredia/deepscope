@@ -27,16 +27,16 @@ async def calculate_distances(
         use_worker: bool = False,
         batch_size: int = 32
 ) -> List[Dict]:
-    """
-    Calculate distances between pairs of strings using various methods.
-    Now supports proper prefix handling for multiple models.
-    """
+    """Calculate distances between pairs of strings using various methods with parallel processing."""
     logger.info(f"Starting distance calculation: {distance_type}, model: {model_id}, prefix: {distance_prefix}")
+
+    # Only use multiprocessing if explicitly requested and we have enough pairs
+    use_parallel = use_worker and len(pairs) > 1000
 
     if distance_type == "levenshtein":
         pair_inputs = [(pair.string1, pair.string2) for pair in pairs]
 
-        if use_worker and len(pairs) > 1000:
+        if use_parallel:
             try:
                 with multiprocessing.Pool() as pool:
                     results = pool.map(calculate_levenshtein_distance, pair_inputs)
@@ -51,13 +51,90 @@ async def calculate_distances(
         return results
 
     elif distance_type == "cosine":
-        # Use embedding model for cosine distance with proper prefix
+        # Get the embedding model
         model = get_model(model_id)
         prefix = distance_prefix or f"{model_id}_cosine"
-        return calculate_cosine_distance(pairs, model, batch_size, prefix)
+
+        # For cosine, we need to get embeddings first, which is I/O bound
+        # So we get embeddings in batches, then can parallelize the distance calculations
+
+        # Get unique strings and create mapping
+        unique_strings = list({pair.string1 for pair in pairs} | {pair.string2 for pair in pairs})
+        string_to_idx = {s: i for i, s in enumerate(unique_strings)}
+
+        # Get embeddings (this is more efficient done in batches)
+        embeddings = model.get_embeddings(unique_strings, batch_size)
+        normalized_embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
+
+        # Now we can parallelize the distance calculations
+        if use_parallel:
+            try:
+                # Create a function for pool.map
+                def calc_cosine_for_pair(pair_idx):
+                    pair = pairs[pair_idx]
+                    i = string_to_idx[pair.string1]
+                    j = string_to_idx[pair.string2]
+                    similarity = np.dot(normalized_embeddings[i], normalized_embeddings[j])
+                    distance = max(float(1 - similarity), 0)
+                    return {
+                        "string1": pair.string1,
+                        "string2": pair.string2,
+                        "distances": {prefix: distance}
+                    }
+
+                with multiprocessing.Pool() as pool:
+                    results = pool.map(calc_cosine_for_pair, range(len(pairs)))
+                    logger.info(f"Cosine multiprocessing completed with {len(results)} results")
+                return results
+            except Exception as e:
+                logger.error(f"Cosine multiprocessing failed: {e}")
+                logger.info("Falling back to sequential processing")
+
+        # Sequential fallback
+        results = []
+        for pair in pairs:
+            i = string_to_idx[pair.string1]
+            j = string_to_idx[pair.string2]
+            similarity = np.dot(normalized_embeddings[i], normalized_embeddings[j])
+            distance = max(float(1 - similarity), 0)
+            results.append({
+                "string1": pair.string1,
+                "string2": pair.string2,
+                "distances": {prefix: distance}
+            })
+
+        logger.info(f"Sequential cosine completed with {len(results)} results")
+        return results
 
     elif distance_type.startswith(("jaccard_", "cosine_token_")):
-        # Handle token-based distances with proper prefixing
+        # For token-based distances, we can directly parallelize
+        if use_parallel:
+            try:
+                # Create a function for pool.map
+                def calc_token_for_pair(pair):
+                    result = calculate_token_distance(
+                        pair.string1,
+                        pair.string2,
+                        distance_type.split("_")[0],
+                        tokenization
+                    )
+                    return {
+                        "string1": result["string1"],
+                        "string2": result["string2"],
+                        "distances": {
+                            f"{distance_type}": result["distance"]
+                        }
+                    }
+
+                with multiprocessing.Pool() as pool:
+                    results = pool.map(calc_token_for_pair, pairs)
+                    logger.info(f"Token multiprocessing completed with {len(results)} results")
+                return results
+            except Exception as e:
+                logger.error(f"Token multiprocessing failed: {e}")
+                logger.info("Falling back to sequential processing")
+
+        # Sequential fallback
         results = []
         for pair in pairs:
             result = calculate_token_distance(
@@ -66,7 +143,6 @@ async def calculate_distances(
                 distance_type.split("_")[0],
                 tokenization
             )
-            # Convert to new format with distances dict
             results.append({
                 "string1": result["string1"],
                 "string2": result["string2"],
@@ -74,6 +150,8 @@ async def calculate_distances(
                     f"{distance_type}": result["distance"]
                 }
             })
+
+        logger.info(f"Sequential token completed with {len(results)} results")
         return results
 
     else:
