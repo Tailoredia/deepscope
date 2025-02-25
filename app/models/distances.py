@@ -120,6 +120,10 @@ class CSVDistanceInput(BaseModel):
         default="ward",
         description="Method for hierarchical clustering."
     )
+    outlier_detection_method: str = Field(
+        default="isolation_forest",
+        description="Prefix for the unified map JSON file."
+    )
 
     dimensionality_reduction: Literal["tsne", "umap"] = Field(
         default="tsne",

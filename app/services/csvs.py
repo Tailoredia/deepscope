@@ -295,7 +295,7 @@ def process_clustering(
             distances=condensed_dist,
             texts=texts,
             preserved_fields=preserved_fields,
-            method="isolation_forest"  # You can make this configurable
+            method=input_data.outlier_detection_method
         )
 
         # Create cluster result with outlier info
