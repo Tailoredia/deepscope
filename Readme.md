@@ -5,7 +5,7 @@ The Manifold Visualization and Analysis Platform is a powerful and intuitive too
 ## Features
 
 - **Distance Calculation**: Calculate various distance metrics between data points or strings, including Levenshtein, cosine using any sentence-transformer / HF model, and token-based distances.
-- **Dimensionality Reduction**: Visualize high-dimensional data in 2D or 3D using the t-SNE algorithm, preserving local structure and revealing patterns.
+- **Dimensionality Reduction**: Visualize high-dimensional data in 2D using the UMAP or t-SNE algorithms, preserving local structure and revealing patterns.
 - **Clustering**: Perform hierarchical clustering and visualize dendrograms to understand data groupings and similarities.
 - **Embedding Analysis**: Explore and compare different embedding models, measure neighborhood stability, and visualize embeddings.
 - **Outlier Detection**: Identify anomalies and outliers in datasets using state-of-the-art techniques such as Z-score, Isolation Forest, and Local Outlier Factor.
