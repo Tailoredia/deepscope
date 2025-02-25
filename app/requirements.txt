@@ -1,0 +1,7 @@
+fastapi[standard]==0.115.8
+uvicorn==0.34.0
+python-Levenshtein==0.26.1
+polars==1.22.0
+sentence-transformers==3.4.1
+matplotlib==3.10.0
+umap-learn==0.5.7

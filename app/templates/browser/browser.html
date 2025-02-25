@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Browser</title>
+    <link rel="stylesheet" href="/static/css/browser.css">
+</head>
+<body>
+<div class="header">
+    <div class="user-info">
+        {% if user %}
+        Logged in as: {{ user.username }}
+        {% else %}
+        Not logged in
+        {% endif %}
+    </div>
+
+    <h1>File Browser</h1>
+
+    <div class="directory-nav">
+        {% for dir_name, dir_desc in available_dirs.items() %}
+        <a href="{{ url_for('browse_directory', bname=dir_name, path='') }}"
+           class="directory-button {% if dir_name == current_dir %}active{% endif %}">
+            {{ dir_desc }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="breadcrumb">
+        {% for part in breadcrumbs %}
+        {% if not loop.last %}
+        <a href="{{ part.url }}">{{ part.name }}</a> /
+        {% else %}
+        {{ part.name }}
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+{% if files %}
+<div class="file-grid">
+    {% for file in files %}
+    <div class="file-card">
+        <div>
+            {% if file.type == "directory" %}
+            <span class="file-icon">📁</span>
+            {% else %}
+            <span class="file-icon">📄</span>
+            {% endif %}
+
+            {% if file.type == "directory" %}
+            <a href="{{ url_for('browse_directory', bname=current_dir, path=file.rel_path) }}" class="file-name">{{ file.name }}/</a>
+            {% else %}
+            <span class="file-name">{{ file.name }}</span>
+            {% endif %}
+        </div>
+
+        {% if file.is_image and file.type != "directory" %}
+        <div class="file-preview">
+            <img src="{{ url_for(file.mount_point, path=file.rel_path) }}" alt="{{ file.name }}">
+        </div>
+        {% endif %}
+
+        <div class="file-meta">
+            {{ file.size }}
+            <br>
+            Last modified: {{ file.modified }}
+            {% if file.type != "directory" %}
+            <br>
+            <a href="{{ url_for(file.mount_point, path=file.rel_path) }}" target="_blank">View/Download</a>
+            {% if 'tsne' in file.name or 'umap' in file.name %}
+            <br>
+            <a href="{{ url_for('render_tsne', file_path=file.rel_path) }}" target="_blank">View Map</a>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <h2>No files found</h2>
+    <p>This directory is empty.</p>
+</div>
+{% endif %}
+</body>
+</html>

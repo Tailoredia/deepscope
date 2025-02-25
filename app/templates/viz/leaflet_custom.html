@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualization Map</title>
+
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <!-- D3.js -->
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+
+    <!-- Local Styles -->
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/layout.css">
+    <link rel="stylesheet" href="/static/css/grid.css">
+    <link rel="stylesheet" href="/static/css/legend.css">
+    <link rel="stylesheet" href="/static/css/filters.css">
+    <link rel="stylesheet" href="/static/css/leaflet-cluster-filters.css">
+</head>
+<body>
+<div class="visualization-wrapper">
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Left Panel -->
+    <div class="left-panel">
+        <!-- Color Field Control -->
+        <div class="panel-section">
+            <div class="panel-section-header">
+                <h3>Color By</h3>
+                <button class="panel-section-toggle">−</button>
+            </div>
+            <div class="panel-section-content">
+                <select id="colorField" class="field-select"></select>
+            </div>
+        </div>
+
+        <!-- Text Field Controls -->
+        <div class="panel-section">
+            <div class="panel-section-header">
+                <h3>Display Fields</h3>
+                <button class="panel-section-toggle">−</button>
+            </div>
+            <div class="panel-section-content">
+                <div id="textFieldControls"></div>
+            </div>
+        </div>
+    </div>
+    <button class="left-panel-toggle">❯</button>
+
+    <!-- Right Panel (Legend) -->
+    <div class="right-panel">
+        <div class="panel-section">
+            <div class="panel-section-header">
+                <h3>Legend</h3>
+                <button class="panel-section-toggle">−</button>
+            </div>
+            <div class="panel-section-content">
+                <div id="legend"></div>
+            </div>
+        </div>
+
+        <!-- Categorical Filters -->
+        <div class="panel-section">
+            <div class="panel-section-header">
+                <h3>Filter Data</h3>
+                <button class="panel-section-toggle">−</button>
+            </div>
+            <div class="panel-section-content">
+                <div id="categoricalFilters"></div>
+            </div>
+        </div>
+    </div>
+    <button class="right-panel-toggle">❮</button>
+</div>
+
+<!-- D3.js -->
+<script src="https://d3js.org/d3.v6.min.js"></script>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+<!-- Leaflet MarkerCluster JS -->
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+<!-- Application Scripts -->
+<script src="/static/js/state.js"></script>
+<script src="/static/js/utils.js"></script>
+<script src="/static/js/progress-tracker.js"></script>
+<script src="/static/js/map-initializer.js"></script>
+<script src="/static/js/processors.js"></script>
+<script src="/static/js/text-field-controls.js"></script>
+<script src="/static/js/color-legend-handler.js"></script>
+<script src="/static/js/categorical-filters.js"></script>
+<script src="/static/js/filter-handler.js"></script>
+<script src="/static/js/color-updater.js"></script>
+<script src="/static/js/panel-interactions.js"></script>
+<script src="/static/js/visualization.js"></script>
+</body>
+</html>

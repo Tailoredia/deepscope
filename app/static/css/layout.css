@@ -1,0 +1,146 @@
+/* Layout Styles */
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.visualization-wrapper {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.field-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: calc(100vw - 350px);
+    max-height: 300px;
+    background: white;
+    z-index: 1500;
+    padding: 5px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    overflow-y: auto;
+}
+
+#map {
+    position: absolute;
+    left: 0;
+    width: calc(100vw - 300px);
+    height: 100vh;
+    background-color: #778899;
+    z-index: 1;
+}
+
+.control-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 100vh;
+    background: white;
+    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+    z-index: 2000;
+    padding: 20px;
+    border-left: 1px solid #eaeaea;
+    box-sizing: border-box;
+}
+
+.control-section {
+    margin-bottom: 5px;
+}
+
+.control-section-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.control-item {
+    padding: 5px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #eaeaea;
+}
+
+.field-select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #dcdfe6;
+    font-size: 14px;
+    color: #2c3e50;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.text-field-container {
+    margin-bottom: 10px;
+}
+
+.text-field {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.checkbox-container input[type="checkbox"] {
+    margin-right: 12px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.checkbox-container label {
+    font-size: 14px;
+    color: #2c3e50;
+    cursor: pointer;
+}
+
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 3px;
+    padding: 2px;
+}
+
+.checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #eaeaea;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.checkbox-wrapper label {
+    font-size: 13px;
+    color: #2c3e50;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.checkbox-wrapper.all-checkbox {
+    background: #e3e8ef;
+    font-weight: 500;
+}
