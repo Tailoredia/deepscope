@@ -78,37 +78,39 @@ const TextFieldControls = (function() {
             return checkbox;
         })];
 
+        // Store the selected fields in AppState for access across modules
+        updateSelectedFields();
+
         // Initialize handlers for the checkboxes
         const debouncedUpdateMarkers = () => {
-            const selectedFields = Array.from(
-                document.querySelectorAll('#textFieldControls input:checked:not(#show-all-fields)')
-            ).map(cb => cb.name);
+            // First, update the list of selected fields in AppState
+            updateSelectedFields();
 
+            // Get the markers
             const markers = AppState.get('markers');
-            markers.eachLayer(marker => {
-                const node = marker.options.originalData;
-                const labelText = selectedFields.length > 0
-                    ? selectedFields
-                        .map(field => `${field}: ${node[field]}`)
-                        .join(' | ')
-                    : `labelstr: ${node.labelstr}`;
+            if (!markers) {
+                console.warn('Markers not found when updating text fields');
+                return;
+            }
 
-                const color = AppState.get('colorMap').get(node[AppState.get('currentColorField')]);
-                const newMarker = Processors.createMarkerWithPopup(
-                    node,
-                    color,
-                    AppState.get('currentColorField')
-                );
-
-                markers.removeLayer(marker);
-                markers.addLayer(newMarker);
-            });
+            // Refresh markers to use new labels
+            FilterHandler.refreshMarkers();
         };
 
         const updateMarkersDebounced = () => {
             if (_debounceTimeoutId) clearTimeout(_debounceTimeoutId);
-            _debounceTimeoutId = setTimeout(debouncedUpdateMarkers, 1000);
+            _debounceTimeoutId = setTimeout(debouncedUpdateMarkers, 500);
         };
+
+        // Update the selected fields in AppState
+        function updateSelectedFields() {
+            const selectedFields = Array.from(
+                document.querySelectorAll('#textFieldControls input:checked:not(#show-all-fields)')
+            ).map(cb => cb.name);
+
+            AppState.set('selectedFields', selectedFields);
+            console.log('Updated selected fields:', selectedFields);
+        }
 
         allCheckbox.addEventListener('change', () => {
             fieldCheckboxes.forEach(cb => {
@@ -125,8 +127,17 @@ const TextFieldControls = (function() {
         });
     }
 
+    /**
+     * Get the currently selected fields
+     * @returns {Array} Array of selected field names
+     */
+    function getSelectedFields() {
+        return AppState.get('selectedFields') || ['labelstr'];
+    }
+
     // Public API
     return {
-        generateControls: generateControls
+        generateControls: generateControls,
+        getSelectedFields: getSelectedFields
     };
 })();

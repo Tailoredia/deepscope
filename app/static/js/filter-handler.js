@@ -1,6 +1,6 @@
 /**
  * Filter Handler Module
- * Centralized filtering logic with properly functioning color legend filter
+ * Centralized filtering logic for all filters
  */
 const FilterHandler = (function() {
     /**
@@ -24,52 +24,54 @@ const FilterHandler = (function() {
             return;
         }
 
-        // Log current application state for debugging
-        console.log('Current Color Field:', currentColorField);
-
         // Collect all filter sets
-        const colorLegendFilter = AppState.get('colorLegendFilter');
-        console.log('Color Legend Filter:', colorLegendFilter ? [...colorLegendFilter] : 'undefined');
+        const allFilters = {};
 
-        // Get all categorical filters
-        const categoryFilters = {};
+        // Collect color legend filters
+        const colorLegendFilter = AppState.get('colorLegendFilter');
+        if (colorLegendFilter && colorLegendFilter.size > 0) {
+            allFilters[currentColorField] = colorLegendFilter;
+        }
+
+        // Collect categorical field filters
         Object.keys(AppState.getAll())
             .filter(key => key.endsWith('Filters') && key !== 'colorLegendFilter')
             .forEach(key => {
                 const field = key.replace('Filters', '');
                 const fieldFilter = AppState.get(key);
-                if (fieldFilter) {
-                    categoryFilters[field] = fieldFilter;
+                if (fieldFilter && fieldFilter.size > 0) {
+                    allFilters[field] = fieldFilter;
                 }
             });
 
-        console.log('Category Filters:', Object.fromEntries(
-            Object.entries(categoryFilters).map(([k, v]) => [k, [...v]])
-        ));
+        // Log all active filters
+        console.log('Active Filters:', allFilters);
 
-        // Filter data with combined logic
+        // Filter data using AND logic
         const filteredData = rawData.filter(node => {
-            // 1. Check color legend filter
-            const passesColorFilter = !colorLegendFilter ||
-                                      colorLegendFilter.size === 0 ||
-                                      colorLegendFilter.has(node[currentColorField]);
+            // Check each active filter
+            return Object.entries(allFilters).every(([field, filterSet]) => {
+                // Check if the node has the field and its value is in the filter set
+                const isValid = node.hasOwnProperty(field) && filterSet.has(node[field]);
 
-            if (!passesColorFilter) {
-                return false;
-            }
+                // Detailed logging for debugging
+                if (!isValid) {
+                    console.log(`Filtered out:`, {
+                        node,
+                        field,
+                        fieldValue: node[field],
+                        allowedValues: [...filterSet]
+                    });
+                }
 
-            // 2. Check all category filters
-            return Object.entries(categoryFilters).every(([field, filterSet]) => {
-                return filterSet.size === 0 || filterSet.has(node[field]);
+                return isValid;
             });
         });
 
         // Log filtering results
         console.log('Filtering Results:', {
             totalDataPoints: rawData.length,
-            filteredDataPoints: filteredData.length,
-            colorFilterActive: colorLegendFilter && colorLegendFilter.size > 0,
-            categoryFiltersActive: Object.values(categoryFilters).some(set => set.size > 0)
+            filteredDataPoints: filteredData.length
         });
 
         // Ensure color map exists
@@ -89,8 +91,7 @@ const FilterHandler = (function() {
 
         // Add filtered markers
         filteredData.forEach(node => {
-            const value = node[currentColorField];
-            const color = colorMap.get(value);
+            const color = colorMap.get(node[currentColorField]);
             const marker = Processors.createMarkerWithPopup(
                 node,
                 color,
@@ -116,6 +117,51 @@ const FilterHandler = (function() {
     }
 
     /**
+     * Refresh all markers (used for updating display fields)
+     */
+    function refreshMarkers() {
+        console.log('------- REFRESHING MARKERS -------');
+
+        // This is a simpler version of applyFilters that just recreates all markers
+        // to update their display text without changing the filtering
+
+        const rawData = AppState.get('rawData');
+        const markers = AppState.get('markers');
+        const currentColorField = AppState.get('currentColorField');
+        const colorMap = AppState.get('colorMap');
+
+        if (!rawData || !markers || !currentColorField || !colorMap) {
+            console.error('Cannot refresh markers: missing critical data');
+            return;
+        }
+
+        // Get the currently visible markers' data
+        const visibleData = [];
+        markers.eachLayer(marker => {
+            if (marker.options && marker.options.originalData) {
+                visibleData.push(marker.options.originalData);
+            }
+        });
+
+        // Clear and recreate markers
+        markers.clearLayers();
+
+        // Add recreated markers with updated labels
+        visibleData.forEach(node => {
+            const color = colorMap.get(node[currentColorField]);
+            const marker = Processors.createMarkerWithPopup(
+                node,
+                color,
+                currentColorField
+            );
+            markers.addLayer(marker);
+        });
+
+        console.log(`Refreshed ${visibleData.length} markers with updated display fields`);
+        console.log('------- MARKERS REFRESHED -------');
+    }
+
+    /**
      * Initialize default filter state
      * @param {Array} data - Raw data points
      */
@@ -133,18 +179,29 @@ const FilterHandler = (function() {
         const sortedFields = AppState.get('sortedFields');
 
         // Initialize color legend filter with all unique values
-        if (currentColorField) {
-            const colorValues = [...new Set(data.map(node => node[currentColorField]))];
-            AppState.set('colorLegendFilter', new Set(colorValues));
-            console.log('Color Legend Filter Initialized:', colorValues);
-        }
+        const colorValues = [...new Set(data.map(node => node[currentColorField]))];
+        AppState.set('colorLegendFilter', new Set(colorValues));
+        console.log('Color Legend Filter:', colorValues);
 
         // Initialize categorical field filters
         sortedFields.forEach(field => {
             const uniqueValues = [...new Set(data.map(node => node[field]))];
             AppState.set(`${field}Filters`, new Set(uniqueValues));
-            console.log(`${field} Filter Initialized:`, uniqueValues);
+            console.log(`${field} Filter:`, uniqueValues);
         });
+
+        // Ensure color map is populated
+        const colorMap = new Map();
+        const colorGenerator = Utils.getColorForValues(colorValues);
+        colorValues.forEach(value => {
+            colorMap.set(value, colorGenerator.getColor(value));
+        });
+        AppState.set('colorMap', colorMap);
+
+        // Initialize selectedFields with labelstr as default
+        if (!AppState.get('selectedFields')) {
+            AppState.set('selectedFields', ['labelstr']);
+        }
 
         // Apply filters to ensure all nodes are initially visible
         applyFilters();
@@ -153,6 +210,7 @@ const FilterHandler = (function() {
     // Public API
     return {
         applyFilters: applyFilters,
+        refreshMarkers: refreshMarkers,
         initializeFilters: initializeFilters
     };
 })();

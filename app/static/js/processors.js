@@ -5,22 +5,25 @@ const Processors = {
      * @returns {string} Formatted label text
      */
     getLabelText(node) {
-        // Default fallback if method not defined elsewhere
+        // Default fallback if node not defined
         if (!node) return 'No Data';
 
         try {
-            // Check if TextFieldControls is defined and has method
-            if (window.TextFieldControls && window.TextFieldControls.getSelectedFields) {
-                const selectedFields = window.TextFieldControls.getSelectedFields();
-                return selectedFields.length > 0
-                    ? selectedFields
-                        .map(field => `${field}: ${node[field] || 'N/A'}`)
-                        .join(' | ')
-                    : `labelstr: ${node.labelstr || 'Unknown'}`;
-            }
+            // Get selected fields directly from AppState or TextFieldControls module
+            const selectedFields = AppState.get('selectedFields') ||
+                (window.TextFieldControls && window.TextFieldControls.getSelectedFields()) ||
+                ['labelstr'];
 
-            // Fallback method if TextFieldControls not available
-            return node.labelstr || JSON.stringify(node).slice(0, 50);
+            console.log('Getting label text with selected fields:', selectedFields);
+
+            if (selectedFields.length > 0) {
+                return selectedFields
+                    .filter(field => node.hasOwnProperty(field)) // Ensure field exists on node
+                    .map(field => `${field}: ${node[field] || 'N/A'}`)
+                    .join(' | ');
+            } else {
+                return `${node.labelstr || 'Unknown'}`;
+            }
         } catch (error) {
             console.error('Error in getLabelText:', error);
             return 'Error in label';
