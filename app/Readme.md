@@ -13,7 +13,7 @@
 - Unified map generation
 - Clustering and dimensionality reduction
 
-#### Distance Calculation Services [`README.md`](services/distances/README.md)
+#### Distance Calculation Services [`Readme.md`](services/distances/Readme.md)
 - **Base Distance Calculations** [`base.py`](services/distances/base.py)
     - Supports multiple distance metrics:
         - Levenshtein distance
@@ -22,13 +22,13 @@
     - Async processing with multiprocessing support
     - Flexible embedding model integration
 
-#### Analytics Module [`README.md`](services/analytics/README.md)
+#### Analytics Module [`Readme.md`](services/analytics/Readme.md)
 - Outlier detection methods
 - Distance metric visualization
 - Comprehensive data analysis tools
 - E-commerce specific insights
 
-#### t-SNE Visualization [`README.md`](services/tsnes/README.md)
+#### t-SNE Visualization [`Readme.md`](services/tsnes/Readme.md)
 - Dimensionality reduction techniques
 - t-SNE and UMAP implementations
 - Grid-based visualization

@@ -71,7 +71,7 @@ The Manifold Visualization and Analysis Platform is a powerful and intuitive too
 ## Project Documentation
 
 ### Root Level Documentation
-- [Main Project README](../Readme.md)
+- [Main Project Readme](../Readme.md)
 - [Technical Architecture Overview](app/Readme.md)
 - [Short High Level Report](app/Report.md)
 
@@ -149,7 +149,7 @@ We have a CI/CD pipeline set up to automatically build, test, and deploy the app
 
 Maintaining up-to-date and comprehensive documentation is crucial for the project's usability and maintainability. When contributing, please update the relevant documentation files, including:
 
-- README.md: Update the main README file if your contribution introduces new features, changes existing functionality, or requires additional setup instructions.
+- Readme.md: Update the main Readme file if your contribution introduces new features, changes existing functionality, or requires additional setup instructions.
 - API Documentation: If your contribution modifies the API endpoints or request/response formats, update the `urls` and `web` documentation accordingly.
 - Code Comments: Ensure that your code is well-commented, explaining the purpose, inputs, and outputs of functions and classes.
 
