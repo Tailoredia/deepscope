@@ -281,7 +281,7 @@ def process_clustering(
             'Z': Z.tolist(),
             'metrics': metrics,
             'labels': texts,
-            'dendro_path': save_dendrogram(Z, texts, block_id),
+            'dendro_path': save_dendrogram(Z, texts, block_id) if len(texts) < 500 else None,
             'outlier_analysis': outlier_results  # Add the outlier results
         }
 

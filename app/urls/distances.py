@@ -9,6 +9,7 @@ import requests
 
 import polars as pl
 from fastapi import APIRouter, File, UploadFile, HTTPException, Query, Body, Form
+from starlette.responses import Response, JSONResponse
 
 from ..config.constants import OUTPUT_FIGS, OUTPUT_JSONS, DISTANCES, OUTPUT_DISTANCES_URL
 from ..config.loggers import get_and_set_logger
@@ -142,7 +143,7 @@ async def calculate_distances_from_csv(
                 for model in config_model.embedding_models
             ]
 
-        return result
+        return JSONResponse("ok")
 
     except json.JSONDecodeError as e:
         logger.error(f"Error parsing config JSON: {str(e)}")

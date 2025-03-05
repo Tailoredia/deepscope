@@ -53,12 +53,8 @@ const Utils = (function() {
         return _sharedColorGenerator;
     }
 
-    /**
-     * Generate a categorical color palette
-     * @param {number} count - Number of colors to generate
-     * @returns {Array} List of color strings
-     */
     function generateCategoricalColors(count) {
+        // Enhanced base colors with better spread across hue space
         const baseColors = [
             '#1F77B4', // muted blue
             '#FF7F0E', // safety orange
@@ -69,7 +65,17 @@ const Utils = (function() {
             '#E377C2', // raspberry yogurt pink
             '#7F7F7F', // middle gray
             '#BCBD22', // curry yellow-green
-            '#17BECF'  // blue-teal
+            '#17BECF', // blue-teal
+            '#4B0082', // indigo
+            '#006400', // dark green
+            '#800000', // maroon
+            '#FF00FF', // magenta
+            '#00FFFF', // cyan
+            '#FFD700', // gold
+            '#00FF00', // lime
+            '#8B4513', // saddle brown
+            '#4682B4', // steel blue
+            '#FF4500'  // orange red
         ];
 
         // If count is small, return a subset of base colors
@@ -77,16 +83,65 @@ const Utils = (function() {
             return baseColors.slice(0, count);
         }
 
-        // If more colors needed, generate additional colors
+        // For larger sets, use a more sophisticated approach with minimum distance check
+        const minDistance = 40; // Minimum perceptual distance between colors
         const colors = [...baseColors];
-        while (colors.length < count) {
-            // Generate a new color by slightly shifting hue
-            const lastColor = colors[colors.length - 1];
-            const newColor = shiftColor(lastColor);
-            colors.push(newColor);
+        let attempts = 0;
+
+        while (colors.length < count && attempts < 500) {
+            // Generate a candidate color
+            const h = Math.floor(Math.random() * 360);             // random hue
+            const s = Math.floor(Math.random() * 30 + 70);         // high saturation (70-100%)
+            const l = Math.floor(Math.random() * 30 + 35);         // mid lightness (35-65%)
+
+            const candidateColor = hslToHex(h, s, l);
+
+            // Check if this color is distinct enough from existing colors
+            let isDistinct = true;
+            for (const existingColor of colors) {
+                if (getColorDistance(candidateColor, existingColor) < minDistance) {
+                    isDistinct = false;
+                    break;
+                }
+            }
+
+            if (isDistinct) {
+                colors.push(candidateColor);
+                attempts = 0; // Reset attempts counter on success
+            } else {
+                attempts++;
+            }
+        }
+
+        // If we couldn't generate enough distinct colors, fill with more variants
+        if (colors.length < count) {
+            console.warn(`Could only generate ${colors.length} distinct colors. Adding less distinct colors to meet requirement.`);
+
+            while (colors.length < count) {
+                // Generate more variants with lower distinctness threshold
+                const h = Math.floor(Math.random() * 360);
+                const s = Math.floor(Math.random() * 60 + 40); // more variance in saturation
+                const l = Math.floor(Math.random() * 50 + 25); // more variance in lightness
+
+                colors.push(hslToHex(h, s, l));
+            }
         }
 
         return colors;
+    }
+
+    function getColorDistance(hexColor1, hexColor2) {
+        // Convert hex to RGB
+        const rgb1 = hexToRgb(hexColor1);
+        const rgb2 = hexToRgb(hexColor2);
+
+        // Simple Euclidean distance in RGB space (simplified approximation)
+        const rDiff = rgb1.r - rgb2.r;
+        const gDiff = rgb1.g - rgb2.g;
+        const bDiff = rgb1.b - rgb2.b;
+
+        // Weight green channel higher (human eyes are more sensitive to green)
+        return Math.sqrt(rDiff*rDiff + gDiff*gDiff*1.5 + bDiff*bDiff);
     }
 
     /**

@@ -212,14 +212,6 @@ const Processors = {
 
         return svg.node();
     },
-
-    /**
-     * Create markers with popup for a data point
-     * @param {Object} node - Point data
-     * @param {string} color - Color for the marker
-     * @param {string} colorField - Field used for coloring
-     * @returns {L.Marker} Leaflet marker object
-     */
     createMarkerWithPopup(node, color, colorField) {
         // Ensure node exists
         if (!node) {
@@ -229,6 +221,9 @@ const Processors = {
 
         const radius = Utils.calculatePointRadius(node);
         const labelText = this.getLabelText(node);
+
+        // Get label visibility state from AppState
+        const labelsVisible = AppState.get('labelsVisible') !== false; // Default to visible if not set
 
         // Ensure color exists
         let colorMap = AppState.get('colorMap');
@@ -254,41 +249,45 @@ const Processors = {
             }
         }
 
+        // Create marker HTML with label display conditional on visibility setting
+        const markerHtml = `
+            <div style="position: relative;">
+                <div style="
+                    width: ${radius}px;
+                    height: ${radius}px;
+                    border-radius: 50%;
+                    background-color: ${color};
+                    border: 2px solid white;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                ">
+                    ${node.total_count > 1 ? `<span style="color: white; font-size: ${radius/3}px; font-weight: bold;">${node.total_count}</span>` : ''}
+                </div>
+                ${labelsVisible ? `
+                <div style="
+                    position: absolute;
+                    top: ${radius + 2}px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: white;
+                    padding: 2px 6px;
+                    border-radius: 3px;
+                    border: 1px solid #ccc;
+                    font-size: 12px;
+                    white-space: nowrap;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                    z-index: 1000;">
+                    ${labelText}
+                </div>` : ''}
+            </div>`;
+
         const marker = L.marker([node.lat, node.lng], {
             icon: L.divIcon({
-                html: `
-                    <div style="position: relative;">
-                        <div style="
-                            width: ${radius}px;
-                            height: ${radius}px;
-                            border-radius: 50%;
-                            background-color: ${color};
-                            border: 2px solid white;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                        ">
-                            ${node.total_count > 1 ? `<span style="color: white; font-size: ${radius/3}px; font-weight: bold;">${node.total_count}</span>` : ''}
-                        </div>
-                        <div style="
-                            position: absolute;
-                            top: ${radius + 2}px;
-                            left: 50%;
-                            transform: translateX(-50%);
-                            background: white;
-                            padding: 2px 6px;
-                            border-radius: 3px;
-                            border: 1px solid #ccc;
-                            font-size: 12px;
-                            white-space: nowrap;
-                            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-                            z-index: 1000;">
-                            ${labelText}
-                        </div>
-                    </div>`,
+                html: markerHtml,
                 className: '',
-                iconSize: [radius + 2, radius + 30],
+                iconSize: [radius + 2, radius + (labelsVisible ? 30 : 2)],
                 iconAnchor: [radius/2, radius/2]
             }),
             originalData: node,
