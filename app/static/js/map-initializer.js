@@ -36,11 +36,6 @@ const MapInitializer = (function() {
         return { map, mapBounds };
     }
 
-    /**
-     * Create a marker cluster group with custom settings
-     * @param {Object} options - Clustering options
-     * @returns {L.MarkerClusterGroup} Cluster group
-     */
     function createMarkerCluster(options = {}) {
         return L.markerClusterGroup({
             maxClusterRadius: (zoom) => {
@@ -73,12 +68,16 @@ const MapInitializer = (function() {
                 const childMarkers = cluster.getAllChildMarkers();
                 const count = cluster.getChildCount();
 
+                // Get the current color field
+                const currentColorField = AppState.get('currentColorField');
+
+                // Get distribution with proper handling of numeric fields
                 const distribution = Processors.getClusterDistribution(childMarkers);
                 const labels = childMarkers.map(marker => marker.options.label);
 
                 const totalOriginalCount = childMarkers.reduce((sum, marker) => {
                     const nodeCount = marker.options.originalData.occurrence_count ||
-                                    marker.options.originalData.total_count || 1;
+                                  marker.options.originalData.total_count || 1;
                     return sum + nodeCount;
                 }, 0);
 
@@ -95,6 +94,7 @@ const MapInitializer = (function() {
                 container.appendChild(pieContainer);
                 container.appendChild(countDiv);
 
+                // Create pie chart with the distribution data
                 Processors.createPieChart(pieContainer, distribution);
 
                 const size = Math.max(80, Math.min(200, 40 * Math.log(totalOriginalCount + 1)));
@@ -104,8 +104,34 @@ const MapInitializer = (function() {
                     iconSize: L.point(size, size)
                 });
 
-                const commonWords = Utils.getMostCommonWords(labels);
-                cluster.bindTooltip(`Most common terms:\n${commonWords.join('\n')}`, {
+                // Check if it's a numeric field
+                const rawData = AppState.get('rawData');
+                const isNumeric = rawData.filter(node =>
+                    node[currentColorField] !== null &&
+                    node[currentColorField] !== undefined &&
+                    !isNaN(Number(node[currentColorField])) &&
+                    typeof node[currentColorField] !== 'boolean'
+                ).length > 0;
+
+                let tooltipContent;
+
+                if (isNumeric) {
+                    // For numeric fields, show average values
+                    // Calculate average value for the cluster
+                    const values = childMarkers.map(marker =>
+                        Number(marker.options.originalData[currentColorField])
+                    ).filter(val => !isNaN(val));
+
+                    const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
+
+                    tooltipContent = `Cluster of ${count} points\nAverage ${currentColorField}: ${avg.toFixed(2)}`;
+                } else {
+                    // For categorical fields, show most common terms
+                    const commonWords = Utils.getMostCommonWords(labels);
+                    tooltipContent = `Most common terms:\n${commonWords.join('\n')}`;
+                }
+
+                cluster.bindTooltip(tooltipContent, {
                     direction: 'top',
                     offset: L.point(0, -60),
                     className: 'cluster-tooltip',

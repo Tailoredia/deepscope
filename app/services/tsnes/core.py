@@ -145,7 +145,7 @@ def process_block_dimred(
 
                 for outlier in outlier_results['outliers']:
                     if outlier['text'] == strings[i]:
-                        is_outlier = True
+                        is_outlier = outlier['is_outlier']
                         outlier_score = outlier['score']
                         break
 

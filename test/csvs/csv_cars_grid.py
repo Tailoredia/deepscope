@@ -5,8 +5,8 @@ import traceback
 
 import requests
 
-from config.constants import OUTPUT_FIGS, OUTPUT_JSONS, DISTANCES, OUTPUT_DISTANCES_URL
-from config.loggers import get_and_set_logger
+from app.config.constants import OUTPUT_FIGS, OUTPUT_JSONS, DISTANCES, OUTPUT_DISTANCES_URL
+from app.config.loggers import get_and_set_logger
 
 logger = get_and_set_logger(__name__)
 
@@ -53,12 +53,9 @@ class TestAPIClient:
             batch_size=32,
             use_worker=True,
             clustering=True,
-            outlier_detection_method="zscore",
+            unified_map=False,
+            grid_size=False,
             linkage_method="ward",
-            dimensionality_reduction='umap',
-            reduction_perplexity=30,
-            reduction_n_neighbors=15,
-            reduction_min_dist=0.1,
             timeout=300
     ):
         """Calculate distances from a CSV file with support for multiple embedding models"""
@@ -94,12 +91,9 @@ class TestAPIClient:
             "batch_size": batch_size,
             "use_worker": use_worker,
             "clustering": clustering,
-            "outlier_detection_method": outlier_detection_method,
+            "unified_map": unified_map,
+            "grid_size": grid_size,
             "linkage_method": linkage_method,
-            "dimensionality_reduction": dimensionality_reduction,
-            "reduction_perplexity": reduction_perplexity,
-            "reduction_n_neighbors": reduction_n_neighbors,
-            "reduction_min_dist": reduction_min_dist,
             "output_dir": output_dir
         }
 
@@ -326,15 +320,15 @@ def save_results(results, output_dir=OUTPUT_JSONS):
 def main():
     """Main entry point for processing CSV files"""
     results = process_csv_directory(
+        fields=["Car_Name","Fuel_Type","Seller_Type","Transmission"],
+        blocking_keys=["Year"],
+        unified_map=True,
+        grid_size=3,
         directory='../app/data',
         clustering=True,
         compare_mode='all_pairs',
         batch_size=8,
-        use_worker=True,
-        dimensionality_reduction='umap',  # or 'umap'
-        reduction_perplexity=30,  # for t-SNE
-        reduction_n_neighbors=15,  # for UMAP
-        reduction_min_dist=0.1  # for UMAP
+        use_worker=True
     )
     save_results(results)
 

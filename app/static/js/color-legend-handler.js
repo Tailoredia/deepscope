@@ -71,24 +71,45 @@ const ColorLegendHandler = (function() {
         const colorLegendFilter = new Set(uniqueValues);
         AppState.set('colorLegendFilter', colorLegendFilter);
 
+        // Get the current color field
+        const colorField = AppState.get('currentColorField');
+        const containsBooleans = AppState.get('currentFieldContainsBooleans');
+
         // Count occurrences of each value
         const valueCounts = AppState.get('rawData').reduce((counts, node) => {
-            const value = node[AppState.get('currentColorField')];
+            const rawValue = node[colorField];
+
+            // Ensure boolean values are converted to strings for consistent counting
+            const value = typeof rawValue === 'boolean' ? String(rawValue) : rawValue;
+
             counts[value] = (counts[value] || 0) + 1;
             return counts;
         }, {});
+
+        // Get color map
+        const colorMap = AppState.get('colorMap');
+
+        // Debug: display color map
+        console.log('Color map for legend:', [...colorMap.entries()]);
 
         // Create legend items
         uniqueValues.forEach(value => {
             const item = document.createElement('div');
             item.className = 'legend-item';
+            item.dataset.value = value; // Store the value in the dataset for easy reference
             item.style.cursor = 'pointer';
             item.style.opacity = '1';
             item.style.transition = 'opacity 0.2s ease';
 
             const colorBox = document.createElement('div');
             colorBox.className = 'legend-color';
-            colorBox.style.backgroundColor = AppState.get('colorMap').get(value);
+
+            // Get color from color map - this is the key part
+            const color = colorMap.get(value);
+            colorBox.style.backgroundColor = color;
+
+            // For debugging
+            console.log(`Legend item color for ${value}: ${color}`);
 
             const label = document.createElement('span');
             label.className = 'legend-label';
@@ -100,6 +121,7 @@ const ColorLegendHandler = (function() {
             item.addEventListener('click', () => {
                 const colorLegendFilter = AppState.get('colorLegendFilter');
 
+                // Toggle the clicked value in the filter
                 if (colorLegendFilter.has(value)) {
                     colorLegendFilter.delete(value);
                     item.style.opacity = '0.5';
@@ -114,11 +136,40 @@ const ColorLegendHandler = (function() {
                 // Log the current filter state
                 console.log('Color Legend Filter Updated:', [...colorLegendFilter]);
 
+                // Update the opacity of all legend items based on the current selection
+                updateLegendItemOpacity(colorLegendFilter);
+
                 // Apply filters
                 FilterHandler.applyFilters();
             });
 
             legend.appendChild(item);
+        });
+    }
+
+    /**
+     * Update opacity of legend items based on the current filter
+     * @param {Set} colorLegendFilter - Set of currently selected values
+     */
+    function updateLegendItemOpacity(colorLegendFilter) {
+        const legend = document.getElementById('legend');
+        if (!legend) return;
+
+        // If no filters are active (empty set) or all items are selected, set all to default opacity
+        const legendItems = legend.querySelectorAll('.legend-item');
+
+        if (colorLegendFilter.size === 0 || colorLegendFilter.size === legendItems.length) {
+            // Either all or none are selected, so uniform opacity
+            legendItems.forEach(item => {
+                item.style.opacity = colorLegendFilter.size === 0 ? '0.5' : '1';
+            });
+            return;
+        }
+
+        // Some items are selected, so highlight only those
+        legendItems.forEach(item => {
+            const itemValue = item.dataset.value;
+            item.style.opacity = colorLegendFilter.has(itemValue) ? '1' : '0.5';
         });
     }
 
@@ -166,6 +217,7 @@ const ColorLegendHandler = (function() {
     // Public API
     return {
         updateLegend: updateLegend,
+        updateLegendItemOpacity: updateLegendItemOpacity,
         selectAllLegendValues: selectAllLegendValues,
         selectNoLegendValues: selectNoLegendValues
     };

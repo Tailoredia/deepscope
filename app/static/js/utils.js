@@ -12,12 +12,12 @@ const Utils = (function() {
      * @returns {Object} Color generator with consistent color mapping
      */
     function getColorForValues(values) {
-        // Clean and deduplicate values
+        // Clean and deduplicate values, ensuring boolean values are converted to strings
         const cleanValues = [...new Set(values.filter(val =>
             val != null &&
             val !== '' &&
             String(val).trim() !== ''
-        ))];
+        ).map(val => typeof val === 'boolean' ? String(val) : val))];
 
         // If we already have a color generator, use it
         if (_sharedColorGenerator) {
@@ -32,9 +32,12 @@ const Utils = (function() {
             _colorMap: new Map(),
 
             getColor: function(value) {
+                // Convert boolean values to strings for consistent lookup
+                const lookupValue = typeof value === 'boolean' ? String(value) : value;
+
                 // If color already assigned, return it
-                if (this._colorMap.has(value)) {
-                    return this._colorMap.get(value);
+                if (this._colorMap.has(lookupValue)) {
+                    return this._colorMap.get(lookupValue);
                 }
 
                 // If we've run out of colors, cycle back
@@ -42,7 +45,7 @@ const Utils = (function() {
                 const color = colors[index];
 
                 // Store and return the color
-                this._colorMap.set(value, color);
+                this._colorMap.set(lookupValue, color);
                 return color;
             }
         };
@@ -257,6 +260,22 @@ const Utils = (function() {
         _sharedColorGenerator = null;
     }
 
+    function getNumericColorScale(min, max) {
+      // Use a blue-to-red color scale
+      return function(value) {
+        // Normalize the value between 0 and 1
+        const normalized = (value - min) / (max - min);
+
+        // Create a color gradient from blue to red
+        // Blue for low values, red for high values
+        const r = Math.floor(normalized * 255);
+        const b = Math.floor(255 - (normalized * 255));
+        const g = Math.floor(100 - (normalized * 50));
+
+        return `rgb(${r}, ${g}, ${b})`;
+      };
+    }
+
     function getMostCommonWords(labels, maxWords = 5) {
         const sortedFields = AppState.get('sortedFields') || [];
         const wordFreq = {};
@@ -287,6 +306,7 @@ const Utils = (function() {
         calculatePointRadius: calculatePointRadius,
         createPopupContent: createPopupContent,
         resetColorGenerator: resetColorGenerator,
-        getMostCommonWords: getMostCommonWords
+        getMostCommonWords: getMostCommonWords,
+        getNumericColorScale: getNumericColorScale
     }
 })();

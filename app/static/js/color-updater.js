@@ -3,45 +3,88 @@
  * Handles updating marker colors and color-related UI with proper filter integration
  */
 const ColorUpdater = (function() {
-    /**
-     * Update colors for data based on a specific field
-     * @param {Array} data - Data points
-     * @param {String} field - Field to use for coloring
-     */
     function updateColors(data, field) {
-        console.log(`Updating colors based on field: ${field}`);
+      console.log(`Updating colors based on field: ${field}`);
 
-        // Get unique values and handle numeric vs categorical
-        const uniqueValues = [...new Set(data.map(node => {
-            const value = node[field];
-            // Explicitly convert boolean to string
-            return typeof value === 'boolean' ? String(value) : value;
-        }))];
+      // Determine if the field contains boolean values
+      const containsBooleans = data.some(node => typeof node[field] === 'boolean');
+      console.log(`Field ${field} contains boolean values: ${containsBooleans}`);
 
-        console.log(`Unique values for ${field}:`, uniqueValues);
+      // Determine if the field contains numeric values
+      const numericValues = data.filter(node =>
+        node[field] !== null &&
+        node[field] !== undefined &&
+        !isNaN(Number(node[field])) &&
+        typeof node[field] !== 'boolean'
+      ).map(node => Number(node[field]));
 
-        const colorGenerator = Utils.getColorForValues(uniqueValues);
-        const colorMap = new Map();
+      const isNumeric = numericValues.length > 0;
 
-        uniqueValues.forEach((value) => {
-            // Ensure string conversion for boolean
-            const stringValue = typeof value === 'boolean' ? String(value) : value;
-            const color = colorGenerator.getColor(stringValue);
-            colorMap.set(stringValue, color);
+      // Get unique values and ensure consistent handling of boolean values
+      const uniqueValues = [...new Set(data.map(node => {
+        const value = node[field];
+        // Always convert booleans to strings for consistent handling
+        return typeof value === 'boolean' ? String(value) : value;
+      }))];
+
+      console.log(`Unique values for ${field}:`, uniqueValues);
+
+      // First, clear the shared color generator if we're dealing with a new color field
+      if (field !== AppState.get('currentColorField')) {
+        // Reset the shared color generator in Utils
+        if (typeof Utils.resetColorGenerator === 'function') {
+          Utils.resetColorGenerator();
+        }
+      }
+
+      const colorMap = new Map();
+
+      if (isNumeric && !containsBooleans) {
+        // If the field is numeric, use a color scale
+        console.log("Using numeric color scale for field:", field);
+
+        // Find min and max values
+        const min = Math.min(...numericValues);
+        const max = Math.max(...numericValues);
+
+        console.log(`Numeric range: ${min} to ${max}`);
+
+        // Create a color scale function
+        const colorScale = Utils.getNumericColorScale(min, max);
+
+        // Map each value to its color on the scale
+        uniqueValues.forEach(value => {
+          const numValue = Number(value);
+          const color = !isNaN(numValue) ? colorScale(numValue) : '#cccccc';
+          colorMap.set(value, color);
         });
+      } else {
+        // For non-numeric or mixed fields, use categorical colors
+        const colorGenerator = Utils.getColorForValues(uniqueValues);
+        uniqueValues.forEach(value => {
+          const color = colorGenerator.getColor(value);
+          colorMap.set(value, color);
+        });
+      }
 
-        // Update app state with new color map
-        AppState.set('colorMap', colorMap);
+      // Log the color mapping
+      console.log("Color mapping:", Array.from(colorMap.entries()));
 
-        // Create a new color legend filter with all values selected
-        const colorLegendFilter = new Set(uniqueValues);
-        AppState.set('colorLegendFilter', colorLegendFilter);
-        console.log('Color Legend Filter Reset:', [...colorLegendFilter]);
+      // Update app state with new color map
+      AppState.set('colorMap', colorMap);
 
-        // Update legend with new color values
-        ColorLegendHandler.updateLegend(uniqueValues);
+      // Store information about whether this field contains booleans
+      AppState.set('currentFieldContainsBooleans', containsBooleans);
 
-        console.log('Updated color map and legend');
+      // Create a new color legend filter with all values selected
+      const colorLegendFilter = new Set(uniqueValues);
+      AppState.set('colorLegendFilter', colorLegendFilter);
+      console.log('Color Legend Filter Reset:', [...colorLegendFilter]);
+
+      // Update legend with new color values
+      ColorLegendHandler.updateLegend(uniqueValues);
+
+      console.log('Updated color map and legend');
     }
 
     /**

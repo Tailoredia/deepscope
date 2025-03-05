@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepScope: Liberando el Poder Oculto de tus Datos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --gradient-start: #4a0072;
+            --gradient-mid: #6a0099;
+            --gradient-end: #b000b5;
+            --text-color: #ffffff;
+            --accent-color: #e83e8c;
+            --slide-bg: linear-gradient(135deg, var(--gradient-start), var(--gradient-mid), var(--gradient-end));
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            font-family: 'Inter', sans-serif;
+            background-color: #111;
+            color: var(--text-color);
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .slides-container {
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 2.5rem;
+            background: var(--slide-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            overflow: hidden;
+        }
+
+        .slide.active {
+            opacity: 1;
+            z-index: 10;
+        }
+
+        .header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            color: white;
+        }
+
+        .slide-content {
+            max-width: 1200px;
+            width: 100%;
+            text-align: center;
+            padding: 0 2rem;
+            padding-bottom: 3.5rem; /* Added padding at the bottom to ensure content doesn't overlap with controls */
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        h2 {
+            font-size: 2.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            line-height: 1.3;
+        }
+
+        h3 {
+            font-size: 1.75rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        p, li {
+            font-size: 1.35rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            font-weight: 400;
+        }
+
+        .highlight {
+            color: #f8f9fa;
+            background-color: rgba(232, 62, 140, 0.2);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: white;
+            color: var(--gradient-mid);
+            padding: 0.75rem 2rem;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            margin-top: 1.5rem;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .btn:hover {
+            background-color: transparent;
+            color: white;
+            border-color: white;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            width: 100%;
+            margin-top: 2rem;
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .card {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: left;
+            backdrop-filter: blur(10px);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .card p {
+            font-size: 1.1rem;
+            flex: 1;
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .metrics {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin: 3rem 0;
+        }
+
+        .metric {
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        .quote {
+            font-style: italic;
+            font-size: 1.5rem;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            position: relative;
+            padding: 0 3rem;
+        }
+
+        .quote::before, .quote::after {
+            content: '"';
+            font-size: 4rem;
+            position: absolute;
+            opacity: 0.3;
+        }
+
+        .quote::before {
+            top: -1rem;
+            left: 0;
+        }
+
+        .quote::after {
+            bottom: -3rem;
+            right: 0;
+        }
+
+        .point-list {
+            text-align: left;
+            max-width: 800px;
+            margin: 0 auto;
+            list-style-type: none;
+        }
+
+        .point-list li {
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+            position: relative;
+        }
+
+        .point-list li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 2rem;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        .control-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .control-btn i {
+            font-size: 1.2rem;
+            color: white;
+        }
+
+        .dots {
+            position: absolute;
+            bottom: 1rem;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            z-index: 90;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .dot.active {
+            background-color: white;
+            transform: scale(1.2);
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 0.5rem;
+            right: 1rem;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            z-index: 95;
+        }
+
+        .image-container {
+            max-width: 80%;
+            margin: 0 auto;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        code {
+            font-family: 'Courier New', monospace;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .code-block {
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: left;
+            margin: 1.5rem 0;
+            overflow: auto;
+            font-size: 1rem;
+        }
+
+        @media (max-width: 1200px) {
+            h1 {
+                font-size: 2.8rem;
+            }
+
+            h2 {
+                font-size: 2rem;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="slides-container">
+    <!-- Header appears on all slides -->
+    <div class="header">
+        <img style="height:55px;" class="logo" src="https://www.tailoredia.com/wp-content/uploads/2025/02/tai2.png" />
+    </div>
+
+    <!-- Slide 1: Intro -->
+    <div class="slide active" id="slide-1">
+        <div class="slide-content">
+            <h1>Liberamos el poder oculto de tus datos con nuestras soluciones personalizadas</h1>
+            <p>Transformando datos complejos en información empresarial accionable</p>
+        </div>
+    </div>
+
+    <!-- Slide 2: The Challenge -->
+    <div class="slide" id="slide-2">
+        <div class="slide-content">
+            <h2>El Desafío de la Complejidad de Datos</h2>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-database"></i></div>
+                    <h3>Volumen Abrumador</h3>
+                    <p>Tu empresa recopila cantidades sin precedentes de datos en múltiples dominios: interacciones con clientes, registros de ventas, detalles de productos y comportamientos de usuarios.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-chart-network"></i></div>
+                    <h3>Complejidad Imposible</h3>
+                    <p>Un solo perfil de cliente puede contener docenas de atributos, multiplicados por miles o millones de clientes, creando una complejidad que las herramientas tradicionales no pueden desentrañar.</p>
+                </div>
+            </div>
+            <p class="quote">Es como intentar entender una ciudad mirando cada ladrillo en cada edificio. Imposible, ¿verdad?</p>
+        </div>
+    </div>
+
+    <!-- Slide 3: The Problem -->
+    <div class="slide" id="slide-3">
+        <div class="slide-content" style="padding-bottom: 8rem;">
+            <h2 style="margin-bottom: 1rem;">Las Limitaciones Fundamentales del Análisis Tradicional</h2>
+            <p style="margin-bottom: 1.5rem;">Los enfoques tradicionales tratan los datos de alta dimensionalidad como lineales, tergiversando fundamentalmente la estructura intrínseca de datos complejos.</p>
+
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+                <div class="card" style="height: auto; min-height: 180px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                        <h3 style="flex: 1; margin: 0; text-align: left;">Para Equipos de Marketing</h3>
+                        <div class="card-icon" style="margin: 0 0 0 1rem;"><i class="fas fa-chart-line"></i></div>
+                    </div>
+                    <p style="text-align: left; font-style: italic;">"Sabemos que hay información valiosa en los datos, pero no podemos verla."</p>
+                    <p style="text-align: left;">Estás luchando por identificar segmentos de clientes significativos más allá de la demografía básica, incapaz de detectar los patrones matizados que impulsan las decisiones de compra.</p>
+                </div>
+                <div class="card" style="height: auto; min-height: 180px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                        <h3 style="flex: 1; margin: 0; text-align: left;">Para Equipos de Producto</h3>
+                        <div class="card-icon" style="margin: 0 0 0 1rem;"><i class="fas fa-shopping-cart"></i></div>
+                    </div>
+                    <p style="text-align: left; font-style: italic;">"¿Por qué productos aparentemente similares tienen un rendimiento tan diferente?"</p>
+                    <p style="text-align: left;">Tus datos de productos existen en silos, haciendo imposible entender cómo las características y atributos se relacionan entre sí en todo tu portafolio.</p>
+                </div>
+
+                <div class="card" style="height: auto; min-height: 180px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                        <h3 style="flex: 1; margin: 0; text-align: left;">Para Cadena de Suministro</h3>
+                        <div class="card-icon" style="margin: 0 0 0 1rem;"><i class="fas fa-truck"></i></div>
+                    </div>
+                    <p style="text-align: left;">Estás perdiendo relaciones no obvias entre factores operativos aparentemente no relacionados, lo que lleva a ineficiencias que permanecen invisibles en los paneles convencionales.</p>
+                </div>
+                <div class="card" style="height: auto; min-height: 180px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                        <h3 style="flex: 1; margin: 0; text-align: left;">Para Ejecutivos</h3>
+                        <div class="card-icon" style="margin: 0 0 0 1rem;"><i class="fas fa-users"></i></div>
+                    </div>
+                    <p style="text-align: left; font-style: italic;">"Nuestros competidores parecen entender su catálogo mejor que nosotros."</p>
+                    <p style="text-align: left;">Necesitas una visión holística de tu panorama empresarial para la planificación estratégica, pero tus datos permanecen fragmentados en múltiples informes y sistemas.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 4: Computational Complexity -->
+    <div class="slide" id="slide-4">
+        <div class="slide-content">
+            <h2>La Explosión Computacional</h2>
+            <p>Para un conjunto de datos empresarial típico (1 millón de filas, 100 columnas, 20 valores por columna)</p>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-chart-pie"></i></div>
+                    <h3>Análisis de Distribución Tradicional</h3>
+                    <ul class="point-list" style="text-align: left; margin-left: 0;">
+                        <li><strong>Variable única:</strong> 100 × 20 cálculos = 2.000 cálculos</li>
+                        <li><strong>Por pares (2 variables):</strong> 4.950 pares × 400 combinaciones = ~2 millones de cálculos</li>
+                        <li><strong>Interacciones de 3 variables:</strong> 161.700 combinaciones × 8.000 valores = ~1.300 millones de cálculos</li>
+                        <li><strong>Múltiples variables:</strong> Explosión combinatoria (20<sup>n</sup> combinaciones de valores)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-clock"></i></div>
+                    <h3>Tiempo Computacional</h3>
+                    <ul class="point-list" style="text-align: left; margin-left: 0;">
+                        <li><strong>Análisis por pares:</strong> ~2 horas en hardware estándar</li>
+                        <li><strong>Análisis de 3 variables:</strong> ~12 días de procesamiento continuo</li>
+                        <li><strong>Análisis de 4 variables:</strong> ~8 años de tiempo de procesamiento</li>
+                        <li><strong>Análisis de 5 variables:</strong> Prácticamente imposible (160+ años)</li>
+                    </ul>
+                </div>
+            </div>
+            <p style="margin-top: 1.5rem;"><strong>¿El resultado?</strong> La mayoría de las empresas analizan <span class="highlight">menos del 0,1%</span> de las interacciones potenciales entre variables.</p>
+        </div>
+    </div>
+
+    <!-- Slide 5: Manifold Learning Advantage -->
+    <div class="slide" id="slide-5">
+        <div class="slide-content">
+            <h2>Aprendizaje de Variedades: Avance Computacional</h2>
+            <p>En lugar de analizar cada posible combinación, aprendemos la estructura inherente de tus datos.</p>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-tachometer-alt"></i></div>
+                    <h3>Escalado Lineal con Aprendizaje de Variedades</h3>
+                    <ul class="point-list" style="text-align: left; margin-left: 0;">
+                        <li><strong>Cálculo de distancia:</strong> Complejidad temporal O(n²) (comparando puntos de datos, no variables)</li>
+                        <li><strong>Para 1M de filas:</strong> ~10 mil millones de comparaciones por pares (usando bloqueo optimizado)</li>
+                        <li><strong>Reducción de dimensionalidad:</strong> ~3 horas para todo el proceso</li>
+                        <li><strong>Resultado:</strong> Análisis completo de TODAS las relaciones en horas, no años</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-code"></i></div>
+                    <h3>La Revelación Geométrica</h3>
+                    <ul class="point-list" style="text-align: left; margin-left: 0;">
+                        <li><strong>Todo es geometría:</strong> Productos como puntos en un espacio de alta dimensión</li>
+                        <li><strong>Distancia como significado:</strong> Cuanto más cercanos dos productos, más similares son</li>
+                        <li><strong>Modelos de lenguaje como intérpretes:</strong> Transformando palabras en vectores matemáticos</li>
+                        <li><strong>El mapa es el territorio:</strong> Navegando relaciones como explorando una ciudad</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 6: What is a Manifold? -->
+    <div class="slide" id="slide-6">
+        <div class="slide-content">
+            <h2>¿Qué es una Variedad?</h2>
+            <p>Una variedad es la estructura inherente que se esconde dentro de tus datos complejos. Piensa en ella como la verdadera "forma" de tu información empresarial.</p>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-street-view"></i></div>
+                    <h3>La Analogía del Mundo Real</h3>
+                    <p>A pesar de la complejidad de la Tierra, todas las ubicaciones pueden describirse con solo dos números: latitud y longitud. Esto es porque la superficie de la Tierra es una variedad 2D en un espacio 3D.</p>
+                    <p>De manera similar, tus datos empresariales pueden tener más de 100 variables, pero los patrones significativos a menudo existen en un espacio de dimensión mucho menor.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-cookie-bite"></i></div>
+                    <h3>El Principio del Rollo de Canela</h3>
+                    <p>Imagina un rollo de canela: es una tira larga de masa enrollada en espiral. Lo que parece complejo en 3D es en realidad una simple tira 1D doblada de una manera particular.</p>
+                    <p>Tus datos empresariales funcionan de la misma manera: lo que aparece como un caos complejo de alta dimensión en realidad sigue patrones subyacentes más simples.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 7: Manifolds in Business Context -->
+    <div class="slide" id="slide-7">
+        <div class="slide-content">
+            <h2>Variedades en Tu Negocio</h2>
+            <p>Ejemplos reales de variedades escondidas en datos empresariales cotidianos:</p>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-users"></i></div>
+                    <h3>Segmentación de Clientes</h3>
+                    <p>A pesar de rastrear más de 50 atributos de clientes, la mayoría de las empresas descubren que sus clientes realmente varían a lo largo de solo 3-5 dimensiones significativas:</p>
+                    <ul class="point-list" style="text-align: left; margin-left: 0;">
+                        <li>Sensibilidad al precio</li>
+                        <li>Lealtad a la marca</li>
+                        <li>Compromiso con la categoría</li>
+                        <li>Frecuencia de compra</li>
+                    </ul>
+                    <p>Estas dimensiones forman una variedad que explica el 90% del comportamiento del cliente.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-box-open"></i></div>
+                    <h3>Catálogo de Productos</h3>
+                    <p>Un catálogo de productos típico con más de 100 atributos a menudo tiene una estructura subyacente donde:</p>
+                    <ul class="point-list" style="text-align: left; margin-left: 0;">
+                        <li>Los productos se agrupan naturalmente por patrones de uso</li>
+                        <li>Los puntos de precio siguen progresiones lógicas</li>
+                        <li>Los conjuntos de características evolucionan a lo largo de caminos consistentes</li>
+                    </ul>
+                    <p>Esta organización natural es una variedad que revela oportunidades en el portafolio de productos.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 8: Finding the Manifold -->
+    <div class="slide" id="slide-8">
+        <div class="slide-content">
+            <h2>Cómo DeepScope Encuentra la Variedad de tus Datos</h2>
+            <p>Nuestro proceso único para descubrir la estructura oculta en tus datos empresariales:</p>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-ruler-combined"></i></div>
+                    <h3>Midiendo Relaciones</h3>
+                    <p>En lugar de analizar variables individuales, medimos cómo <em>cada</em> punto de datos se relaciona con <em>todos los demás</em> puntos de datos.</p>
+                    <p>Esto crea un "mapa" multidimensional de relaciones que captura la verdadera estructura de tus datos.</p>
+                    <div class="code-block" style="font-size: 0.8rem;">
+                        <span style="color: #888;"># Calcular distancias entre todos los puntos de datos</span><br>
+                        <span style="color: #f8f8f8;">distances = calculate_all_distances(</span><br>
+                        <span style="color: #f8f8f8;">&nbsp;&nbsp;pairs=all_data_pairs,</span><br>
+                        <span style="color: #f8f8f8;">&nbsp;&nbsp;distance_types=["levenshtein", "cosine"],</span><br>
+                        <span style="color: #f8f8f8;">&nbsp;&nbsp;embedding_models=[{"model_id": "minilm"}]</span><br>
+                        <span style="color: #f8f8f8;">)</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-map"></i></div>
+                    <h3>Visualizando la Variedad</h3>
+                    <p>Utilizamos algoritmos sofisticados para transformar datos de relaciones complejas en mapas visuales intuitivos.</p>
+                    <p>Este proceso preserva la estructura esencial de tus datos mientras los hace comprensibles de un vistazo.</p>
+                    <div class="code-block" style="font-size: 0.8rem;">
+                        <span style="color: #888;"># Crear visualización usando t-SNE o UMAP</span><br>
+                        <span style="color: #f8f8f8;">coords = compute_dimensionality_reduction(</span><br>
+                        <span style="color: #f8f8f8;">&nbsp;&nbsp;distances=distances,</span><br>
+                        <span style="color: #f8f8f8;">&nbsp;&nbsp;n_points=len(data),</span><br>
+                        <span style="color: #f8f8f8;">&nbsp;&nbsp;method='tsne',</span><br>
+                        <span style="color: #f8f8f8;">&nbsp;&nbsp;perplexity=30</span><br>
+                        <span style="color: #f8f8f8;">)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 9: The Solution -->
+    <div class="slide" id="slide-9">
+        <div class="slide-content">
+            <h2>DeepScope: Más Allá del Análisis Tradicional</h2>
+            <p>Nuestro enfoque se basa en el concepto de <span class="highlight">variedades</span>—descubriendo la verdadera estructura de tus datos examinando relaciones, no solo atributos individuales.</p>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-cubes"></i></div>
+                    <h3>Datos como Geometría</h3>
+                    <p>Transformamos tus datos en un espacio matemático donde elementos similares están cercanos entre sí, revelando patrones naturales y estructuras invisibles para los métodos tradicionales.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-project-diagram"></i></div>
+                    <h3>Múltiples Perspectivas</h3>
+                    <p>Al usar diferentes métricas de distancia (Levenshtein, coseno) y modelos de incrustación, podemos ver tus datos desde múltiples ángulos, separando la señal del ruido.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 10: Technical Core (continuación) -->
+    <div class="slide" id="slide-10">
+        <div class="slide-content">
+            <h2>Nuestra Base Técnica</h2>
+            <p>DeepScope combina análisis avanzado basado en distancias con visualización de vanguardia para hacer comprensibles los datos complejos.</p>
+
+            <div class="grid-3 grid">
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-ruler-combined"></i></div>
+                    <h3>Cálculos de Distancia</h3>
+                    <p>Utilizamos múltiples métricas de distancia para crear una visión integral de la estructura de tus datos:</p>
+                    <ul class="point-list" style="text-align: left; margin-left: 0;">
+                        <li>Levenshtein para similitud de texto</li>
+                        <li>Coseno para relaciones semánticas</li>
+                        <li>Métricas basadas en tokens para análisis granular</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-brain"></i></div>
+                    <h3>Modelos de Incrustación</h3>
+                    <p>Nuestra plataforma aprovecha modelos de lenguaje de última generación para entender el significado detrás de tus datos de texto:</p>
+                    <ul class="point-list" style="text-align: left; margin-left: 0;">
+                        <li>MiniLM para procesamiento eficiente</li>
+                        <li>Incrustaciones basadas en transformadores</li>
+                        <li>Opciones de codificación personalizables</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-search"></i></div>
+                    <h3>Detección de Valores Atípicos</h3>
+                    <p>Encontramos verdaderas anomalías en tus datos utilizando algoritmos sofisticados:</p>
+                    <ul class="point-list" style="text-align: left; margin-left: 0;">
+                        <li>Análisis estadístico de puntuación Z</li>
+                        <li>Isolation Forest para patrones complejos</li>
+                        <li>Factor de Valor Atípico Local para contexto</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 11: t-SNE & Visualization -->
+    <div class="slide" id="slide-11">
+        <div class="slide-content">
+            <h2>Visualización Interactiva y Exploración</h2>
+            <p>Transformamos la complejidad de alta dimensión en espacios claros y navegables que revelan patrones y relaciones ocultas.</p>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-map"></i></div>
+                    <h3>Reducción Dimensional</h3>
+                    <p>Usando algoritmos t-SNE y UMAP, transformamos tus datos complejos en visualizaciones 2D y 3D intuitivas donde:</p>
+                    <ul class="point-list" style="text-align: left; margin-left: 0;">
+                        <li>Elementos similares se agrupan</li>
+                        <li>La distancia representa la fuerza de la relación</li>
+                        <li>Los patrones se vuelven inmediatamente visibles</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-hand-pointer"></i></div>
+                    <h3>Exploración Interactiva</h3>
+                    <p>Nuestra capa de visualización convierte la visualización pasiva en exploración activa:</p>
+                    <ul class="point-list" style="text-align: left; margin-left: 0;">
+                        <li>Zoom y desplazamiento para examinar áreas específicas</li>
+                        <li>Codificación por color según cualquier atributo</li>
+                        <li>Filtrado dinámico para probar hipótesis</li>
+                        <li>Identificación de valores atípicos de un vistazo</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 12: Real Business Impact -->
+    <div class="slide" id="slide-12">
+        <div class="slide-content">
+            <h2>Impacto Empresarial Real</h2>
+            <p>DeepScope transforma las capacidades de toma de decisiones en múltiples funciones empresariales.</p>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-bullseye"></i></div>
+                    <h3>Impacto en Marketing y Producto</h3>
+                    <ul class="point-list" style="text-align: left; margin-left: 0;">
+                        <li>Aumento significativo de conversión mediante campañas dirigidas</li>
+                        <li>Descubrimiento de patrones previamente invisibles en el recorrido del cliente</li>
+                        <li>Identificación de productos casi duplicados en catálogos</li>
+                        <li>Nuevas oportunidades de productos en espacios de mercado no ocupados</li>
+                        <li>Detección de anomalías de precios y oportunidades de optimización</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-box-open"></i></div>
+                    <h3>De las Matemáticas al Dinero</h3>
+                    <ul class="point-list" style="text-align: left; margin-left: 0;">
+                        <li>Ahorro de costos mediante eliminación de productos duplicados</li>
+                        <li>Descubrimiento de nuevas categorías a partir de grupos emergentes de productos</li>
+                        <li>Inteligencia competitiva mediante mapeo de catálogos contra competidores</li>
+                        <li>Aseguramiento de calidad mediante detección automatizada de productos atípicos</li>
+                        <li>Mejora de la relevancia de búsqueda mediante comprensión semántica</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 13: Implementation -->
+    <div class="slide" id="slide-13">
+        <div class="slide-content">
+            <h2>Implementación e Integración</h2>
+            <p>DeepScope está diseñado para una implementación rápida e integración perfecta con tus sistemas existentes.</p>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-cogs"></i></div>
+                    <h3>Integración Técnica</h3>
+                    <ul class="point-list" style="text-align: left; margin-left: 0;">
+                        <li><strong>Backend FastAPI:</strong> API moderna basada en async con auto-documentación</li>
+                        <li><strong>Polars:</strong> Operaciones de dataframe rápidas y eficientes en memoria</li>
+                        <li><strong>SentenceTransformers:</strong> Incrustaciones de texto de última generación</li>
+                        <li><strong>Agrupamiento Jerárquico:</strong> Algoritmos sofisticados de agrupación</li>
+                        <li><strong>Frontend Leaflet.js:</strong> Exploración responsiva tipo mapa</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-clock"></i></div>
+                    <h3>Direcciones Futuras</h3>
+                    <ul class="point-list" style="text-align: left; margin-left: 0;">
+                        <li><strong>Análisis Multimodal:</strong> Incluyendo similitud de imágenes junto con texto</li>
+                        <li><strong>Integración de Series Temporales:</strong> Seguimiento de cómo evolucionan las relaciones</li>
+                        <li><strong>Canalizaciones en Tiempo Real:</strong> Actualizaciones de análisis casi en tiempo real</li>
+                        <li><strong>Clusters Explicables:</strong> Mejor interpretación de las agrupaciones</li>
+                        <li><strong>Ajuste Fino de Incrustaciones Personalizadas:</strong> Modelos específicos de dominio</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 14: Call to Action -->
+    <div class="slide" id="slide-14">
+        <div class="slide-content">
+            <h2>El Nuevo Paradigma</h2>
+            <p class="quote">La reducción de dimensionalidad no se trata de simplificar datos, sino de amplificar la comprensión.</p>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-history"></i></div>
+                    <h3>El Mundo Antiguo</h3>
+                    <p>"Déjame ejecutar una prueba estadística en estos dos campos"</p>
+                    <p>Analizar variables individuales, contar correlaciones, limitado a lo que ya sabes que debes buscar.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-rocket"></i></div>
+                    <h3>El Nuevo Mundo</h3>
+                    <p>"Muéstrame todo."</p>
+                    <p>Explorar espacios, navegar relaciones, descubrir patrones que no sabías que debías buscar.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Controls -->
+    <div class="controls">
+        <button class="control-btn prev-btn"><i class="fas fa-chevron-left"></i></button>
+        <button class="control-btn next-btn"><i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <!-- Slide Dots -->
+    <div class="dots">
+        <!-- Dots will be generated by JavaScript -->
+    </div>
+
+    <div class="footer" id="footer">© 2025 Tailoredia</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const slides = document.querySelectorAll('.slide');
+            const dotsContainer = document.querySelector('.dots');
+            const prevBtn = document.querySelector('.prev-btn');
+            const nextBtn = document.querySelector('.next-btn');
+            const totalSlides = slides.length;
+            let currentSlide = 1;
+
+            // Generate dots based on slide count
+            slides.forEach((slide, index) => {
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                dot.setAttribute('data-slide', index + 1);
+                if (index === 0) dot.classList.add('active');
+                dotsContainer.appendChild(dot);
+            });
+
+            // Get all dots after they've been created
+            const dots = document.querySelectorAll('.dot');
+
+            // Ensure the footer is always visible
+            const footer = document.getElementById('footer');
+            if (footer) {
+                // Clone the footer to the slides container to ensure it's visible outside of slides
+                const footerClone = footer.cloneNode(true);
+                footerClone.id = 'footer-global';
+                document.querySelector('.slides-container').appendChild(footerClone);
+            }
+
+            // Function to update slides
+            function updateSlides(newSlide) {
+                // Remove active class from all slides
+                slides.forEach(slide => slide.classList.remove('active'));
+                dots.forEach(dot => dot.classList.remove('active'));
+
+                // Add active class to current slide
+                document.getElementById(`slide-${newSlide}`).classList.add('active');
+                dots[newSlide - 1].classList.add('active');
+
+                currentSlide = newSlide;
+
+                // Update URL with slide number
+                history.replaceState(null, null, `#slide=${newSlide}`);
+
+                // Update slide counter if it exists
+                const slideCounter = document.getElementById('slide-counter');
+                if (slideCounter) {
+                    slideCounter.textContent = `${newSlide}/${totalSlides}`;
+                }
+            }
+
+            // Check URL for slide number on load
+            function getInitialSlide() {
+                const hashParams = window.location.hash.substring(1).split('&').reduce(function (result, item) {
+                    const parts = item.split('=');
+                    if (parts.length === 2) {
+                        result[parts[0]] = parts[1];
+                    }
+                    return result;
+                }, {});
+
+                if (hashParams.slide) {
+                    const slideNum = parseInt(hashParams.slide);
+                    if (!isNaN(slideNum) && slideNum >= 1 && slideNum <= totalSlides) {
+                        return slideNum;
+                    }
+                }
+                return 1; // Default to first slide
+            }
+
+            // Initialize with the correct slide from URL
+            currentSlide = getInitialSlide();
+            updateSlides(currentSlide);
+
+            // Event listeners for navigation
+            prevBtn.addEventListener('click', () => {
+                const newSlide = currentSlide > 1 ? currentSlide - 1 : totalSlides;
+                updateSlides(newSlide);
+            });
+
+            nextBtn.addEventListener('click', () => {
+                const newSlide = currentSlide < totalSlides ? currentSlide + 1 : 1;
+                updateSlides(newSlide);
+            });
+
+            // Event listeners for dots
+            dots.forEach((dot, index) => {
+                dot.addEventListener('click', () => {
+                    const slideNumber = parseInt(dot.getAttribute('data-slide'));
+                    updateSlides(slideNumber);
+                });
+            });
+
+            // Create slide counter
+            const slideCounter = document.createElement('div');
+            slideCounter.id = 'slide-counter';
+            slideCounter.style.cssText = `
+                position: absolute;
+                bottom: 1.5rem;
+                right: 2rem;
+                font-size: 0.9rem;
+                opacity: 0.8;
+                z-index: 100;
+            `;
+            slideCounter.textContent = `${currentSlide}/${totalSlides}`;
+            document.querySelector('.slides-container').appendChild(slideCounter);
+
+            // Handle URL changes
+            window.addEventListener('hashchange', function() {
+                const newSlide = getInitialSlide();
+                if (newSlide !== currentSlide) {
+                    updateSlides(newSlide);
+                }
+            });
+
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight' || e.key === ' ') {
+                    const newSlide = currentSlide < totalSlides ? currentSlide + 1 : 1;
+                    updateSlides(newSlide);
+                } else if (e.key === 'ArrowLeft') {
+                    const newSlide = currentSlide > 1 ? currentSlide - 1 : totalSlides;
+                    updateSlides(newSlide);
+                }
+            });
+        });
+    </script>
+</div>
+</body>
+</html>

@@ -5,8 +5,8 @@ import traceback
 
 import requests
 
-from config.constants import OUTPUT_FIGS, OUTPUT_JSONS, DISTANCES, OUTPUT_DISTANCES_URL
-from config.loggers import get_and_set_logger
+from app.config.constants import OUTPUT_FIGS, OUTPUT_JSONS, DISTANCES, OUTPUT_DISTANCES_URL
+from app.config.loggers import get_and_set_logger
 
 logger = get_and_set_logger(__name__)
 
@@ -321,9 +321,9 @@ def main():
     """Main entry point for processing CSV files"""
     results = process_csv_directory(
         fields=["Car_Name","Fuel_Type","Seller_Type","Transmission"],
-        blocking_keys=["Year"],
-        unified_map=True,
-        grid_size=3,
+        # blocking_keys=["Year"],
+        # unified_map=True,
+        # grid_size=3,
         directory='../app/data',
         clustering=True,
         compare_mode='all_pairs',

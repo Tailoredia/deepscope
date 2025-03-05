@@ -86,6 +86,7 @@ const FilterHandler = (function() {
             AppState.set('colorMap', colorMap);
         }
 
+        updateDataPointsCounter(filteredData.length, rawData.length);
         // Clear and recreate markers
         markers.clearLayers();
 
@@ -205,6 +206,30 @@ const FilterHandler = (function() {
 
         // Apply filters to ensure all nodes are initially visible
         applyFilters();
+    }
+
+    function updateDataPointsCounter(filteredCount, totalCount) {
+      const filterHeader = document.querySelector('.panel-section-header h3');
+      if (!filterHeader || !filterHeader.textContent.includes('Filter Data')) {
+        return;
+      }
+
+      // Remove existing counter if any
+      const existingCounter = filterHeader.querySelector('.data-count');
+      if (existingCounter) {
+        existingCounter.remove();
+      }
+
+      // Create and append counter
+      const counter = document.createElement('span');
+      counter.className = 'data-count';
+      counter.textContent = `(${filteredCount}/${totalCount})`;
+      counter.style.marginLeft = '10px';
+      counter.style.fontSize = '0.85em';
+      counter.style.fontWeight = 'normal';
+      counter.style.color = filteredCount === totalCount ? '#4CAF50' : '#FF9800';
+
+      filterHeader.appendChild(counter);
     }
 
     // Public API

@@ -17,6 +17,17 @@ from ...models.distances import StringPair, DistanceType, ModelConfig
 
 logger = get_and_set_logger(__name__)
 
+def calc_cosine_for_pair(args):
+    pair_idx, pair, string_to_idx, normalized_embeddings, prefix = args
+    i = string_to_idx[pair.string1]
+    j = string_to_idx[pair.string2]
+    similarity = np.dot(normalized_embeddings[i], normalized_embeddings[j])
+    distance = max(float(1 - similarity), 0)
+    return {
+        "string1": pair.string1,
+        "string2": pair.string2,
+        "distances": {prefix: distance}
+    }
 
 async def calculate_distances(
         pairs: List[StringPair],
@@ -69,21 +80,10 @@ async def calculate_distances(
         # Now we can parallelize the distance calculations
         if use_parallel:
             try:
-                # Create a function for pool.map
-                def calc_cosine_for_pair(pair_idx):
-                    pair = pairs[pair_idx]
-                    i = string_to_idx[pair.string1]
-                    j = string_to_idx[pair.string2]
-                    similarity = np.dot(normalized_embeddings[i], normalized_embeddings[j])
-                    distance = max(float(1 - similarity), 0)
-                    return {
-                        "string1": pair.string1,
-                        "string2": pair.string2,
-                        "distances": {prefix: distance}
-                    }
-
+                args_list = [(idx, pair, string_to_idx, normalized_embeddings, prefix)
+                             for idx, pair in enumerate(pairs)]
                 with multiprocessing.Pool() as pool:
-                    results = pool.map(calc_cosine_for_pair, range(len(pairs)))
+                    results = pool.map(calc_cosine_for_pair, args_list)
                     logger.info(f"Cosine multiprocessing completed with {len(results)} results")
                 return results
             except Exception as e:

@@ -30,30 +30,81 @@ const Processors = {
         }
     },
 
-    /**
-     * Get the clustering distribution from a set of markers
-     * @param {Array} markers - List of markers
-     * @returns {Array} Distribution data for pie chart
-     */
     getClusterDistribution(markers) {
-        const distribution = {};
-        markers.forEach(marker => {
-            // Ensure we have a valid cluster_id
-            const clusterId = String(marker.options.cluster_id || 'unknown');
-            distribution[clusterId] = (distribution[clusterId] || 0) + 1;
-        });
-        return Object.entries(distribution).map(([cluster_id, value]) => ({
-            cluster_id,
-            value
-        }));
+        // Get the current color field
+        const colorField = AppState.get('currentColorField');
+
+        // Determine if we're dealing with a numeric field
+        const numeric = AppState.get('rawData').filter(node =>
+            node[colorField] !== null &&
+            node[colorField] !== undefined &&
+            !isNaN(Number(node[colorField])) &&
+            typeof node[colorField] !== 'boolean'
+        ).length > 0;
+
+        // Handle differently based on whether it's a numeric or categorical field
+        if (numeric) {
+            // For numeric fields, group by rounded value ranges and calculate averages
+            const valueGroups = {};
+            const valueCounts = {};
+
+            markers.forEach(marker => {
+                // Get the value from the marker's original data
+                const value = marker.options.originalData[colorField];
+                if (value === null || value === undefined || isNaN(Number(value))) return;
+
+                const numValue = Number(value);
+
+                // Create bins for the values (adjust the bin size as needed)
+                // This example uses 10 bins across the range
+                const min = Math.min(...markers.map(m => Number(m.options.originalData[colorField])));
+                const max = Math.max(...markers.map(m => Number(m.options.originalData[colorField])));
+                const range = max - min;
+                const binSize = range / 10;
+
+                // Determine which bin this value belongs in
+                const binIndex = Math.min(Math.floor((numValue - min) / binSize), 9);
+                const binKey = `bin_${binIndex}`;
+
+                // Accumulate values for calculating averages
+                if (!valueGroups[binKey]) {
+                    valueGroups[binKey] = 0;
+                    valueCounts[binKey] = 0;
+                }
+
+                valueGroups[binKey] += numValue;
+                valueCounts[binKey]++;
+            });
+
+            // Calculate average values for each group and prepare distribution
+            return Object.entries(valueGroups).map(([binKey, sum]) => {
+                const count = valueCounts[binKey];
+                const average = sum / count;
+
+                return {
+                    cluster_id: binKey,
+                    value: count,
+                    average: average // Store the average for coloring
+                };
+            });
+        } else {
+            // Original categorical logic
+            const distribution = {};
+            markers.forEach(marker => {
+                // Ensure we have a valid cluster_id with consistent handling of boolean values
+                const rawClusterId = marker.options.cluster_id || 'unknown';
+                // Convert all cluster IDs to strings for consistency, with special handling for booleans
+                const clusterId = String(rawClusterId);
+                distribution[clusterId] = (distribution[clusterId] || 0) + 1;
+            });
+
+            return Object.entries(distribution).map(([cluster_id, value]) => ({
+                cluster_id,
+                value
+            }));
+        }
     },
 
-    /**
-     * Create a D3 pie chart in a container
-     * @param {HTMLElement} container - DOM element to place the chart
-     * @param {Array} data - Distribution data
-     * @returns {SVGElement} The created SVG element
-     */
     createPieChart(container, data) {
         const width = 120;
         const height = 120;
@@ -76,48 +127,88 @@ const Processors = {
             .innerRadius(radius * 0.5)
             .outerRadius(radius);
 
-        // Ensure color map exists
+        // Get color map and current color field
         let colorMap = AppState.get('colorMap');
-        if (!colorMap) {
-            colorMap = new Map();
-            AppState.set('colorMap', colorMap);
+        const colorField = AppState.get('currentColorField');
+
+        // Determine if the current field is numeric
+        const rawData = AppState.get('rawData');
+        const isNumeric = rawData.filter(node =>
+            node[colorField] !== null &&
+            node[colorField] !== undefined &&
+            !isNaN(Number(node[colorField])) &&
+            typeof node[colorField] !== 'boolean'
+        ).length > 0;
+
+        // If numeric and contains 'average' property, use numeric color scale
+        if (isNumeric && data[0] && 'average' in data[0]) {
+            // Get min and max values from raw data
+            const numericValues = rawData
+                .filter(node => node[colorField] !== null && node[colorField] !== undefined)
+                .map(node => Number(node[colorField]))
+                .filter(val => !isNaN(val));
+
+            const min = Math.min(...numericValues);
+            const max = Math.max(...numericValues);
+
+            // Create color scale function
+            const colorScale = Utils.getNumericColorScale(min, max);
+
+            // Draw pie slices with colors based on average values
+            svg.selectAll('path')
+                .data(pie(data))
+                .enter()
+                .append('path')
+                .attr('d', arc)
+                .attr('fill', d => {
+                    // Use the average value to determine color
+                    return colorScale(d.data.average);
+                })
+                .attr('stroke', 'white')
+                .attr('stroke-width', '1');
+        } else {
+            // Original categorical coloring logic
+            if (!colorMap) {
+                colorMap = new Map();
+                AppState.set('colorMap', colorMap);
+            }
+
+            // Ensure unique, non-null cluster IDs
+            const uniqueClusterIds = [...new Set(
+                data
+                    .map(d => String(d.cluster_id || 'unknown'))
+                    .filter(id => id !== 'unknown')
+            )];
+
+            // Generate colors if not existing
+            if (uniqueClusterIds.length > 0) {
+                const colorGenerator = Utils.getColorForValues(uniqueClusterIds);
+                uniqueClusterIds.forEach(id => {
+                    if (!colorMap.has(id)) {
+                        colorMap.set(id, colorGenerator.getColor(id));
+                    }
+                });
+            }
+
+            svg.selectAll('path')
+                .data(pie(data))
+                .enter()
+                .append('path')
+                .attr('d', arc)
+                .attr('fill', d => {
+                    const clusterId = String(d.data.cluster_id || 'unknown');
+
+                    // Ensure we have a color, fallback to gray
+                    if (!colorMap.has(clusterId)) {
+                        const newColor = Utils.getColorForValues([clusterId]).getColor(clusterId);
+                        colorMap.set(clusterId, newColor);
+                    }
+
+                    return colorMap.get(clusterId) || '#cccccc';
+                })
+                .attr('stroke', 'white')
+                .attr('stroke-width', '1');
         }
-
-        // Ensure unique, non-null cluster IDs
-        const uniqueClusterIds = [...new Set(
-            data
-                .map(d => String(d.cluster_id || 'unknown'))
-                .filter(id => id !== 'unknown')
-        )];
-
-        // Generate colors if not existing
-        if (uniqueClusterIds.length > 0) {
-            const colorGenerator = Utils.getColorForValues(uniqueClusterIds);
-            uniqueClusterIds.forEach(id => {
-                if (!colorMap.has(id)) {
-                    colorMap.set(id, colorGenerator.getColor(id));
-                }
-            });
-        }
-
-        svg.selectAll('path')
-            .data(pie(data))
-            .enter()
-            .append('path')
-            .attr('d', arc)
-            .attr('fill', d => {
-                const clusterId = String(d.data.cluster_id || 'unknown');
-
-                // Ensure we have a color, fallback to gray
-                if (!colorMap.has(clusterId)) {
-                    const newColor = Utils.getColorForValues([clusterId]).getColor(clusterId);
-                    colorMap.set(clusterId, newColor);
-                }
-
-                return colorMap.get(clusterId) || '#cccccc';
-            })
-            .attr('stroke', 'white')
-            .attr('stroke-width', '1');
 
         return svg.node();
     },
@@ -146,14 +237,21 @@ const Processors = {
             AppState.set('colorMap', colorMap);
         }
 
-        // Determine color value
-        const colorValue = node[colorField] || 'unknown';
+        // Determine color value with consistent handling of boolean values
+        const rawColorValue = node[colorField];
+        const colorValue = typeof rawColorValue === 'boolean' ? String(rawColorValue) : rawColorValue;
 
         if (!color) {
-            const colorGenerator = Utils.getColorForValues([colorValue]);
-            color = colorGenerator.getColor(colorValue);
-            colorMap.set(colorValue, color);
-            AppState.set('colorMap', colorMap);
+            // Try to get color from the map first
+            color = colorMap.get(colorValue);
+
+            // If no color is found, generate one
+            if (!color) {
+                const colorGenerator = Utils.getColorForValues([colorValue]);
+                color = colorGenerator.getColor(colorValue);
+                colorMap.set(colorValue, color);
+                AppState.set('colorMap', colorMap);
+            }
         }
 
         const marker = L.marker([node.lat, node.lng], {
@@ -194,7 +292,7 @@ const Processors = {
                 iconAnchor: [radius/2, radius/2]
             }),
             originalData: node,
-            cluster_id: colorValue,
+            cluster_id: colorValue,  // Use the consistent color value here
             label: labelText
         });
 

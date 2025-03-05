@@ -67,7 +67,7 @@
             {% if file.type != "directory" %}
             <br>
             <a href="{{ url_for(file.mount_point, path=file.rel_path) }}" target="_blank">View/Download</a>
-            {% if 'tsne' in file.name or 'umap' in file.name %}
+            {% if 'tsne' in file.name or 'map' in file.name %}
             <br>
             <a href="{{ url_for('render_tsne', file_path=file.rel_path) }}" target="_blank">View Map</a>
             {% endif %}

@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import zscore
 from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
+from sklearn.cluster import DBSCAN
 from typing import List, Dict, Optional
 
 def detect_outliers(
@@ -17,7 +18,7 @@ def detect_outliers(
         distances: Condensed distance matrix
         texts: List of strings corresponding to points
         preserved_fields: Dictionary of preserved field values
-        method: Outlier detection method ("zscore", "isolation_forest", "lof")
+        method: Outlier detection method ("zscore", "isolation_forest", "lof", "dbscan")
 
     Returns:
         Dictionary with outlier information
@@ -53,6 +54,26 @@ def detect_outliers(
         is_outlier = clf.fit_predict(dist_matrix) == -1
         scores = clf.negative_outlier_factor_ * -1
 
+    elif method == "dbscan":
+
+        # Adjust eps and min_samples based on your data
+        dbscan = DBSCAN(eps=0.3, min_samples=10, metric='precomputed')
+        labels = dbscan.fit_predict(dist_matrix)
+
+        # Points labeled as -1 are noise points (outliers)
+        is_outlier = labels == -1
+
+        # Create scores (distance to nearest core point or max distance if isolated)
+        scores = np.zeros(len(labels))
+        for i in range(len(labels)):
+            if is_outlier[i]:
+                # For outliers, find distance to nearest non-outlier point
+                mask = ~is_outlier
+                if np.any(mask):
+                    scores[i] = np.min(dist_matrix[i, mask])
+                else:
+                    scores[i] = np.max(dist_matrix)
+
     else:
         raise ValueError(f"Unknown outlier detection method: {method}")
 
@@ -61,12 +82,13 @@ def detect_outliers(
     field_names = list(preserved_fields.keys())
 
     for i in range(n_points):
-        if is_outlier[i]:
+        # if is_outlier[i]:
             outlier_info = {
                 "text": texts[i],
                 "score": float(scores[i]),
                 "index": i,
-                "fields": {field: preserved_fields[field][i] for field in field_names}
+                "fields": {field: preserved_fields[field][i] for field in field_names},
+                "is_outlier": True if is_outlier[i] else False
             }
             outliers.append(outlier_info)
 

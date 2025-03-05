@@ -121,7 +121,7 @@ class CSVDistanceInput(BaseModel):
         description="Method for hierarchical clustering."
     )
     outlier_detection_method: str = Field(
-        default="isolation_forest",
+        default="lof",
         description="Prefix for the unified map JSON file."
     )
 
