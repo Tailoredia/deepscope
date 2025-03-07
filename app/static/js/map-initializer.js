@@ -113,22 +113,50 @@ const MapInitializer = (function() {
                     typeof node[currentColorField] !== 'boolean'
                 ).length > 0;
 
+                // Get common words for all cluster tooltips
+                const commonWords = Utils.getMostCommonWords(labels, 30);
+
+                // Number of words per column
+                const wordsPerColumn = 10;
+                const numColumns = Math.ceil(commonWords.length / wordsPerColumn);
+
+                // Create HTML for multi-column layout of common terms
+                let commonTermsHtml = `<div>Most common terms:</div><table><tr>`;
+
+                // Create columns
+                for (let col = 0; col < numColumns; col++) {
+                    commonTermsHtml += '<td style="vertical-align: top; padding-right: 15px;">';
+
+                    // Add words for this column
+                    const startIdx = col * wordsPerColumn;
+                    const endIdx = Math.min(startIdx + wordsPerColumn, commonWords.length);
+
+                    for (let i = startIdx; i < endIdx; i++) {
+                        commonTermsHtml += `<div>${commonWords[i]}</div>`;
+                    }
+
+                    commonTermsHtml += '</td>';
+                }
+
+                commonTermsHtml += '</tr></table>';
+
                 let tooltipContent;
 
                 if (isNumeric) {
-                    // For numeric fields, show average values
-                    // Calculate average value for the cluster
+                    // For numeric fields, show average values AND common terms
                     const values = childMarkers.map(marker =>
                         Number(marker.options.originalData[currentColorField])
                     ).filter(val => !isNaN(val));
 
                     const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
 
-                    tooltipContent = `Cluster of ${count} points\nAverage ${currentColorField}: ${avg.toFixed(2)}`;
+                    tooltipContent = `<div>Cluster of ${count} points</div>
+                                     <div>Average ${currentColorField}: ${avg.toFixed(2)}</div>
+                                     ${commonTermsHtml}`;
                 } else {
-                    // For categorical fields, show most common terms
-                    const commonWords = Utils.getMostCommonWords(labels);
-                    tooltipContent = `Most common terms:\n${commonWords.join('\n')}`;
+                    // For categorical fields, show just common terms
+                    tooltipContent = `<div>Cluster of ${count} points</div>
+                                    ${commonTermsHtml}`;
                 }
 
                 cluster.bindTooltip(tooltipContent, {

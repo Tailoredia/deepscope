@@ -10,6 +10,14 @@ const ColorLegendHandler = (function() {
     function updateLegend(uniqueValues) {
         console.log('Updating Color Legend', uniqueValues);
 
+        // Check if we have too many values to display in the legend
+        const maxLegendItems = 50;
+        if (uniqueValues.length > maxLegendItems) {
+            console.warn(`Too many unique values for color legend (${uniqueValues.length}). Limiting to ${maxLegendItems} items.`);
+            // Truncate the list to avoid performance issues
+            uniqueValues = uniqueValues.slice(0, maxLegendItems);
+        }
+
         // Sort values (numerically if possible, otherwise alphabetically)
         uniqueValues = uniqueValues.sort((a, b) => {
             const numA = Number(a);

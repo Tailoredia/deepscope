@@ -6,12 +6,7 @@ const Utils = (function() {
     // Shared color generator to ensure consistent colors
     let _sharedColorGenerator = null;
 
-    /**
-     * Generate a consistent color palette for a set of values
-     * @param {Array} values - Values to generate colors for
-     * @returns {Object} Color generator with consistent color mapping
-     */
-    function getColorForValues(values) {
+    function getColorForValues(values, forceNewGenerator = false, fieldName = '') {
         // Clean and deduplicate values, ensuring boolean values are converted to strings
         const cleanValues = [...new Set(values.filter(val =>
             val != null &&
@@ -19,41 +14,47 @@ const Utils = (function() {
             String(val).trim() !== ''
         ).map(val => typeof val === 'boolean' ? String(val) : val))];
 
-        // If we already have a color generator, use it
-        if (_sharedColorGenerator) {
-            return _sharedColorGenerator;
-        }
+        // Create a new color generator if we don't have one OR if forced
+        // OR if the field has changed
+        if (!_sharedColorGenerator ||
+            forceNewGenerator ||
+            (_sharedColorGenerator._fieldName && _sharedColorGenerator._fieldName !== fieldName)) {
 
-        // Generate categorical colors with consistent strategy
-        const colors = generateCategoricalColors(cleanValues.length);
+            console.log(`Creating new color generator for field: ${fieldName}`);
 
-        // Create a color mapping generator
-        _sharedColorGenerator = {
-            _colorMap: new Map(),
+            // Generate categorical colors with consistent strategy
+            // Pass the field name to ensure different fields get different color sets
+            const colors = generateCategoricalColors(cleanValues.length, fieldName);
 
-            getColor: function(value) {
-                // Convert boolean values to strings for consistent lookup
-                const lookupValue = typeof value === 'boolean' ? String(value) : value;
+            // Create a color mapping generator
+            _sharedColorGenerator = {
+                _colorMap: new Map(),
+                _fieldName: fieldName, // Track which field this generator was created for
 
-                // If color already assigned, return it
-                if (this._colorMap.has(lookupValue)) {
-                    return this._colorMap.get(lookupValue);
+                getColor: function(value) {
+                    // Convert boolean values to strings for consistent lookup
+                    const lookupValue = typeof value === 'boolean' ? String(value) : value;
+
+                    // If color already assigned, return it
+                    if (this._colorMap.has(lookupValue)) {
+                        return this._colorMap.get(lookupValue);
+                    }
+
+                    // If we've run out of colors, cycle back
+                    const index = this._colorMap.size % colors.length;
+                    const color = colors[index];
+
+                    // Store and return the color
+                    this._colorMap.set(lookupValue, color);
+                    return color;
                 }
-
-                // If we've run out of colors, cycle back
-                const index = this._colorMap.size % colors.length;
-                const color = colors[index];
-
-                // Store and return the color
-                this._colorMap.set(lookupValue, color);
-                return color;
-            }
-        };
+            };
+        }
 
         return _sharedColorGenerator;
     }
 
-    function generateCategoricalColors(count) {
+    function generateCategoricalColors(count, fieldName = '') {
         // Enhanced base colors with better spread across hue space
         const baseColors = [
             '#1F77B4', // muted blue
@@ -78,12 +79,35 @@ const Utils = (function() {
             '#FF4500'  // orange red
         ];
 
-        // If count is small, return a subset of base colors
+        // If count is small, use a deterministic but field-specific subset
         if (count <= baseColors.length) {
-            return baseColors.slice(0, count);
+            // Create a copy of the base colors to manipulate
+            const colorsCopy = [...baseColors];
+
+            // Use the field name to create a deterministic but field-specific order
+            // This ensures different fields get different color sets
+            if (fieldName) {
+                // Use simple hash of field name to create a number
+                const fieldHash = fieldName.split('').reduce((acc, char) => {
+                    return acc + char.charCodeAt(0);
+                }, 0);
+
+                // Use the hash to rotate the array
+                const rotateBy = fieldHash % colorsCopy.length;
+
+                // Rotate the array by the calculated amount
+                const rotatedColors = [
+                    ...colorsCopy.slice(rotateBy),
+                    ...colorsCopy.slice(0, rotateBy)
+                ];
+
+                return rotatedColors.slice(0, count);
+            }
+
+            return colorsCopy.slice(0, count);
         }
 
-        // For larger sets, use a more sophisticated approach with minimum distance check
+        // For larger sets, use the existing approach with minimum distance check
         const minDistance = 40; // Minimum perceptual distance between colors
         const colors = [...baseColors];
         let attempts = 0;
@@ -113,7 +137,7 @@ const Utils = (function() {
             }
         }
 
-        // If we couldn't generate enough distinct colors, fill with more variants
+        // Fill with more variants if needed
         if (colors.length < count) {
             console.warn(`Could only generate ${colors.length} distinct colors. Adding less distinct colors to meet requirement.`);
 
@@ -129,6 +153,7 @@ const Utils = (function() {
 
         return colors;
     }
+
 
     function getColorDistance(hexColor1, hexColor2) {
         // Convert hex to RGB
@@ -331,7 +356,7 @@ const Utils = (function() {
       };
     }
 
-    function getMostCommonWords(labels, maxWords = 5) {
+    function getMostCommonWords(labels, maxWords = 30) {
         const sortedFields = AppState.get('sortedFields') || [];
         const wordFreq = {};
         labels.forEach(label => {
